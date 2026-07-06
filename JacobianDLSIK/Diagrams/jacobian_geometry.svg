@@ -1,0 +1,60 @@
+<svg viewBox="0 0 760 460" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L9,4 L0,8 z" fill="#2b6cb0"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L9,4 L0,8 z" fill="#c53030"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L9,4 L0,8 z" fill="#718096"/>
+    </marker>
+  </defs>
+  <rect width="760" height="460" fill="#ffffff"/>
+  <text x="380" y="30" text-anchor="middle" font-size="17" font-weight="bold" fill="#1a202c">The geometric Jacobian: each column is an instantaneous effector velocity</text>
+
+  <!-- ground -->
+  <line x1="80" y1="380" x2="240" y2="380" stroke="#a0aec0" stroke-width="2"/>
+  <g stroke="#a0aec0" stroke-width="1.5">
+    <line x1="100" y1="380" x2="88" y2="394"/><line x1="130" y1="380" x2="118" y2="394"/>
+    <line x1="160" y1="380" x2="148" y2="394"/><line x1="190" y1="380" x2="178" y2="394"/>
+    <line x1="220" y1="380" x2="208" y2="394"/>
+  </g>
+
+  <!-- bones -->
+  <line x1="160" y1="380" x2="330" y2="250" stroke="#2d3748" stroke-width="7" stroke-linecap="round"/>
+  <line x1="330" y1="250" x2="540" y2="190" stroke="#2d3748" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- lever arms r_i (dashed) -->
+  <line x1="160" y1="380" x2="536" y2="194" stroke="#718096" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrowGray)"/>
+  <line x1="330" y1="250" x2="534" y2="192" stroke="#718096" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#arrowGray)"/>
+  <text x="330" y="310" font-size="14" fill="#4a5568" font-style="italic">r&#8321; = p&#8337; &#8722; p&#8321;</text>
+  <text x="410" y="240" font-size="14" fill="#4a5568" font-style="italic">r&#8322; = p&#8337; &#8722; p&#8322;</text>
+
+  <!-- joints -->
+  <circle cx="160" cy="380" r="10" fill="#e2e8f0" stroke="#2d3748" stroke-width="3"/>
+  <circle cx="330" cy="250" r="10" fill="#e2e8f0" stroke="#2d3748" stroke-width="3"/>
+  <circle cx="540" cy="190" r="8" fill="#2b6cb0" stroke="#1a365d" stroke-width="2"/>
+  <text x="128" y="412" font-size="14" fill="#2d3748">joint 1 (p&#8321;)</text>
+  <text x="298" y="228" font-size="14" fill="#2d3748">joint 2 (p&#8322;)</text>
+  <text x="548" y="172" font-size="14" fill="#2b6cb0" font-weight="bold">effector p&#8337;</text>
+
+  <!-- Jacobian column arrows: perpendicular to the lever arms -->
+  <!-- perp to r1 = (376,-186): normalized perp ~ (0.443, 0.896) scaled 70 -> (31, 63); rotate CCW: (-0.443,-0.896)*70 -->
+  <line x1="540" y1="190" x2="509" y2="127" stroke="#2b6cb0" stroke-width="3" marker-end="url(#arrowBlue)"/>
+  <text x="428" y="118" font-size="14" fill="#2b6cb0" font-weight="bold">a &#215; r&#8321;  (joint 1 column)</text>
+  <!-- perp to r2 = (210,-60): perp CCW ~ (0.275,0.962)? perp of (210,-60): (60,210) norm (0.275,0.962) scaled 55 -> (15,53); use upward: (-15,-53) -->
+  <line x1="540" y1="190" x2="525" y2="137" stroke="#2b6cb0" stroke-width="3" stroke-dasharray="7 4" marker-end="url(#arrowBlue)"/>
+  <text x="536" y="120" font-size="14" fill="#2b6cb0">a &#215; r&#8322;</text>
+
+  <!-- target + error -->
+  <circle cx="632" cy="272" r="8" fill="none" stroke="#c53030" stroke-width="3"/>
+  <circle cx="632" cy="272" r="2.5" fill="#c53030"/>
+  <line x1="548" y1="197" x2="624" y2="265" stroke="#c53030" stroke-width="2.5" marker-end="url(#arrowRed)"/>
+  <text x="600" y="222" font-size="14" fill="#c53030" font-weight="bold" font-style="italic">e = t &#8722; p&#8337;</text>
+  <text x="644" y="290" font-size="14" fill="#c53030">target t</text>
+
+  <!-- caption -->
+  <text x="60" y="432" font-size="13.5" fill="#4a5568">Rotating joint i at unit speed moves the effector with velocity a &#215; r&#8353; &#8212; perpendicular to the lever arm, longer arm = bigger column.</text>
+  <text x="60" y="450" font-size="13.5" fill="#4a5568">IK per iteration: pick joint speeds &#916;&#952; whose combined columns J&#916;&#952; best reproduce the error e.</text>
+</svg>
