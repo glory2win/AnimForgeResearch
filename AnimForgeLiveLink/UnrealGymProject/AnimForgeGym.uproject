@@ -1,0 +1,23 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "5.4",
+	"Category": "AnimForge",
+	"Description": "Motion warping evaluation gym. Pre-set level with the production character; driven remotely from Maya via AnimForgeMayaWarpViz / AnimForgeUnrealWarpViz.",
+	"Modules": [
+		{
+			"Name": "AnimForgeGym",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "AnimForgeUnrealWarpViz",
+			"Enabled": true
+		},
+		{
+			"Name": "MotionWarping",
+			"Enabled": true
+		}
+	]
+}

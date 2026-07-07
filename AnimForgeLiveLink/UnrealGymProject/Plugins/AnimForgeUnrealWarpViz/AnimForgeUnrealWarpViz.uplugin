@@ -1,0 +1,30 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "AnimForge Unreal WarpViz",
+	"Description": "Gym-side half of the AnimForge Maya<->Unreal motion warping bridge. Listens for evaluate requests from AnimForgeMayaWarpViz, runs the requested root motion warp on the registered clip, and streams the warped trajectory and ghost poses back to Maya.",
+	"Category": "AnimForge",
+	"CreatedBy": "AnimForge Studios",
+	"CreatedByURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": true,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "AnimForgeUnrealWarpViz",
+			"Type": "Editor",
+			"LoadingPhase": "PostEngineInit"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "MotionWarping",
+			"Enabled": true
+		},
+		{
+			"Name": "AnimationData",
+			"Enabled": true
+		}
+	]
+}
