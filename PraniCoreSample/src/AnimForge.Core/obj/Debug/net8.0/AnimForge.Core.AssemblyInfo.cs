@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AnimForge Studios")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("0.1.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("0.1.0+8210ae9f34c0b23ca6fef3b66a6b8152975a0126")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("0.1.0+8d77c4a520611ed0d7138fdafd98ec2ece612f7f")]
 [assembly: System.Reflection.AssemblyProductAttribute("Prani")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AnimForge.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("0.1.0.0")]
