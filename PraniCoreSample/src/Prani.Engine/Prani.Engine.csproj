@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Prani.Engine — raylib render host + Dear ImGui panel layer.
+       Owns the render thread, the scene, viewports, FBX import.
+       Must NOT reference Avalonia; the shell talks to it through EngineCommands/EngineEvents. -->
+  <ItemGroup>
+    <!-- rlImgui-cs transitively pulls compatible Raylib-cs and ImGui.NET builds. -->
+    <PackageReference Include="rlImgui-cs" Version="3.2.0" />
+    <PackageReference Include="AssimpNet" Version="4.1.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AnimForge.Core\AnimForge.Core.csproj" />
+  </ItemGroup>
+</Project>

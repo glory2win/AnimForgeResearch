@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AnimForge.Core/AnimForge.Core.csproj" />
+    <Project Path="src/Prani.App/Prani.App.csproj" />
+    <Project Path="src/Prani.Engine/Prani.Engine.csproj" />
+  </Folder>
+</Solution>

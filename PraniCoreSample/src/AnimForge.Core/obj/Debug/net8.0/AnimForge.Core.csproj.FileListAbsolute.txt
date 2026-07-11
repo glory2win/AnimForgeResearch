@@ -1,0 +1,12 @@
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\AnimForge.Core\bin\Debug\net8.0\AnimForge.Core.deps.json
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\AnimForge.Core\bin\Debug\net8.0\AnimForge.Core.dll
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\AnimForge.Core\bin\Debug\net8.0\AnimForge.Core.pdb
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\AnimForge.Core\obj\Debug\net8.0\AnimForge.Core.GeneratedMSBuildEditorConfig.editorconfig
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\AnimForge.Core\obj\Debug\net8.0\AnimForge.Core.AssemblyInfoInputs.cache
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\AnimForge.Core\obj\Debug\net8.0\AnimForge.Core.AssemblyInfo.cs
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\AnimForge.Core\obj\Debug\net8.0\AnimForge.Core.csproj.CoreCompileInputs.cache
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\AnimForge.Core\obj\Debug\net8.0\AnimForge.Core.sourcelink.json
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\AnimForge.Core\obj\Debug\net8.0\AnimForge.Core.dll
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\AnimForge.Core\obj\Debug\net8.0\refint\AnimForge.Core.dll
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\AnimForge.Core\obj\Debug\net8.0\AnimForge.Core.pdb
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\AnimForge.Core\obj\Debug\net8.0\ref\AnimForge.Core.dll

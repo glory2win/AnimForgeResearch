@@ -1,0 +1,16 @@
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\Prani.Engine\obj\Debug\net8.0\Prani.Engine.csproj.AssemblyReference.cache
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\Prani.Engine\obj\Debug\net8.0\Prani.Engine.GeneratedMSBuildEditorConfig.editorconfig
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\Prani.Engine\obj\Debug\net8.0\Prani.Engine.AssemblyInfoInputs.cache
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\Prani.Engine\obj\Debug\net8.0\Prani.Engine.AssemblyInfo.cs
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\Prani.Engine\obj\Debug\net8.0\Prani.Engine.csproj.CoreCompileInputs.cache
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\Prani.Engine\obj\Debug\net8.0\Prani.Engine.sourcelink.json
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\Prani.Engine\bin\Debug\net8.0\Prani.Engine.deps.json
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\Prani.Engine\bin\Debug\net8.0\Prani.Engine.dll
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\Prani.Engine\bin\Debug\net8.0\Prani.Engine.pdb
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\Prani.Engine\bin\Debug\net8.0\AnimForge.Core.dll
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\Prani.Engine\bin\Debug\net8.0\AnimForge.Core.pdb
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\Prani.Engine\obj\Debug\net8.0\Prani.En.862594B6.Up2Date
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\Prani.Engine\obj\Debug\net8.0\Prani.Engine.dll
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\Prani.Engine\obj\Debug\net8.0\refint\Prani.Engine.dll
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\Prani.Engine\obj\Debug\net8.0\Prani.Engine.pdb
+D:\AnimForge\AnimForgeResearch\PraniCoreSample\src\Prani.Engine\obj\Debug\net8.0\ref\Prani.Engine.dll

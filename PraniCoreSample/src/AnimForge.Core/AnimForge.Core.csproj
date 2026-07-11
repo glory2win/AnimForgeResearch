@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- animforge_core — the shared math/animation core.
+       No engine or UI dependencies allowed in this project. Pure math + System.Numerics only.
+       This is the managed twin of the (future) native animforge_core; keep the API surface
+       identical so a P/Invoke swap stays drop-in. -->
+  <PropertyGroup>
+    <RootNamespace>AnimForge.Core</RootNamespace>
+  </PropertyGroup>
+</Project>
