@@ -1,0 +1,27 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1.0",
+	"FriendlyName": "RagdollPro",
+	"Description": "Constraint-native powered ragdolls for Unreal Engine. Joint-motor pose matching, contact-aware strength backoff, partial-body hit reactions, and robust settle detection - no PhysicalAnimationComponent required.",
+	"Category": "Physics",
+	"CreatedBy": "AnimForge Studios",
+	"CreatedByURL": "https://animforge.dev",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"FabURL": "",
+	"SupportURL": "mailto:animforgestudios@gmail.com",
+	"EngineVersion": "5.4.0",
+	"CanContainContent": true,
+	"IsBetaVersion": true,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "RagdollPro",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"PlatformAllowList": [ "Win64", "Mac", "Linux" ]
+		}
+	]
+}
