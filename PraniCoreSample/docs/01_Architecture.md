@@ -2,30 +2,47 @@
 
 ## The shape of the tool
 
-Prani runs as **one process with two windows**:
+Prani runs as **one process, one main window** (on Windows). The raylib workspace is a
+native child region embedded in the center of the Avalonia shell:
 
 ```
-┌─────────────────────────────┐        ┌──────────────────────────────────────┐
-│  Prani Control Center       │        │  Prani — Workspace                   │
-│  (Avalonia, main thread)    │        │  (raylib window, render thread)      │
-│                             │        │  ┌─────────────┬─────────────┐       │
-│  File ▸ New/Open/Import/    │ cmds   │  │ Perspective │    Top      │  ImGui│
-│         Save/Save As/Exit   │ ─────► │  ├─────────────┼─────────────┤  dock-│
-│  Outliner (Avalonia twin)   │        │  │   Front     │   Right     │  space│
-│  Properties (NumericUpDown) │ ◄───── │  ├─────────────┴─────────────┤       │
-│  Log view                   │ snap-  │  │ Heatmap│Stats│Console│... │       │
-└─────────────────────────────┘ shots  │  └───────────────────────────┘       │
-                                        └──────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────────┐
+│  Prani  (Avalonia window, main thread)                                     │
+│  File ▸ New/Open/Import/Save/Save As/Exit        Edit  Help                │
+│ ┌──────────┐ ┌────────────────────────────────────────────┐ ┌────────────┐ │
+│ │ Outliner │ │  EMBEDDED raylib workspace (render thread) │ │ Properties │ │
+│ │ (Avalonia│ │  ┌─────────────┬─────────────┐             │ │ (Numeric-  │ │
+│ │  twin)   │ │  │ Perspective │    Top      │  ImGui      │ │  UpDowns)  │ │
+│ │          │ │  ├─────────────┼─────────────┤  dockspace  │ │            │ │
+│ │          │ │  │   Front     │   Right     │             │ │            │ │
+│ │          │ │  ├─────────────┴─────────────┤             │ │            │ │
+│ │          │ │  │ Heatmap │ Stats │ Console │             │ │            │ │
+│ └──────────┘ │  └───────────────────────────┘             │ └────────────┘ │
+│              └────────────────────────────────────────────┘                │
+│  LOG …                                                                     │
+└────────────────────────────────────────────────────────────────────────────┘
+        UI ──cmds──► engine        engine ──snapshots──► UI
 ```
 
-Why two windows instead of embedding raylib inside Avalonia:
+### How the embedding works (`Prani.App/Controls/RaylibHost.cs`)
 
-* raylib owns exactly **one OS window + GL context** and its API is thread-affine.
-  Embedding it as an Avalonia child control means either CPU-copying every frame into a
-  `WriteableBitmap` (slow, kills the point of raylib) or fragile Win32 `SetParent` hacks.
-* A separate workspace window is what DCCs do anyway (Maya's viewport vs. its Qt panels
-  are separate render paths), and it keeps each UI technology on its home turf.
-* ImGui inside the raylib window gives us **dockable multi-viewport** layouts for free.
+raylib owns exactly one OS window + GL context, and its API is thread-affine — you can't
+hand Avalonia its framebuffer directly. Instead:
+
+1. The engine creates its GLFW window **borderless + hidden** (`UndecoratedWindow |
+   HiddenWindow`) and publishes the HWND (`RenderHost.WindowHandle`).
+2. `RaylibHost : NativeControlHost` strips the top-level styles, applies `WS_CHILD`,
+   calls Win32 `SetParent` onto the Avalonia-provided parent handle, and shows it.
+3. Avalonia's layout system then moves/resizes the child HWND like any control; GLFW
+   receives normal `WM_SIZE` messages, so raylib's screen size stays correct.
+4. The render loop keeps running on its own thread, unaware it was adopted. One
+   subtlety: child windows don't take keyboard focus on click, so the render loop calls
+   `SetFocus` on mouse-down (`RenderHost`), making shortcuts like **F** work.
+
+On non-Windows platforms (no portable `SetParent` equivalent) the workspace falls back
+to being a separate OS window — same engine code, only the hosting differs.
+
+ImGui inside the raylib region still gives us **dockable multi-viewport** layouts for free.
 
 ## Layer rules (enforced by project references)
 
@@ -64,6 +81,7 @@ same engine could be driven by a CLI, a test harness, or a different UI toolkit.
 | `Prani.Engine/Viewport/Viewport3D.cs` | One render-texture view inside an ImGui window |
 | `Prani.Engine/UI/ImGuiLayer.cs` | rlImGui setup + dockspace + panel iteration |
 | `Prani.App/Services/EngineService.cs` | Thread marshaling: the only place `Dispatcher.UIThread` appears |
+| `Prani.App/Controls/RaylibHost.cs` | Win32 reparenting: hosts the raylib window as a child control |
 | `Prani.App/MainWindow.axaml(.cs)` | File menu, pickers, confirm dialogs |
 | `AnimForge.Core/All.cs` | `animforge_core.all` facade |
 

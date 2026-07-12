@@ -23,9 +23,11 @@ dotnet publish src\Prani.App -c Release -r win-x64 --self-contained
 
 ## First session walkthrough
 
-1. Launch. Two windows open: **Control Center** (Avalonia) and **Workspace** (raylib).
-2. In the Workspace, drag window tabs to arrange the four viewports + panels; the layout
-   persists in `imgui.ini`.
+1. Launch. One window opens: the Avalonia shell with the raylib **workspace embedded in
+   the center** (outliner left, properties right, log bottom). On non-Windows platforms
+   the workspace appears as a separate window instead.
+2. Inside the workspace area, drag ImGui tabs to arrange the four viewports + panels;
+   the layout persists in `imgui.ini`.
 3. **File ▸ Import Mesh (FBX)…** (Ctrl+I) — pick a mesh. It appears in all viewports,
    selected, camera framed.
 4. Tweak **Position/Rotation/Scale** in either the Avalonia Properties column or the
@@ -44,6 +46,8 @@ dotnet publish src\Prani.App -c Release -r win-x64 --self-contained
 | Mesh looks inside-out | Flipped winding from the exporter — untick **Backface culling** in the Stats panel |
 | App won't exit | The render thread joins with a 5 s timeout on shutdown; check the log for a stuck import |
 | Panels gone / weird layout | Delete `imgui.ini` next to the exe to reset the dock layout |
+| Ctrl+S etc. don't fire | Keyboard focus is inside the embedded workspace — click any Avalonia area (outliner, menu) first; viewport keys (F) need a click in the viewport for the same reason |
+| Workspace area stays black | `RaylibHost.WorkspaceHwnd` was zero at layout time — engine must be started before MainWindow is created (see `App.axaml.cs`) |
 
 ## Where builds land
 

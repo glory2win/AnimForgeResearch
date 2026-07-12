@@ -44,14 +44,25 @@ Save-vs-SaveAs logic lives in `OnSave`: empty `ScenePath` ⇒ delegate to `OnSav
 Dirty-scene confirmation (`ConfirmDiscardIfDirty`) guards New/Open/Exit; Avalonia has no
 built-in MessageBox, so `ShowDialog` builds a tiny modal in code.
 
+## Hosting the workspace: `Controls/RaylibHost.cs`
+
+The center of the window is a `NativeControlHost` that adopts the engine's HWND
+(details in [01_Architecture.md](01_Architecture.md)). Ordering matters and lives in
+`App.axaml.cs`: **start the engine first** (`EngineService.Start` blocks until the raylib
+window exists), copy the handle into `RaylibHost.WorkspaceHwnd`, then create MainWindow.
+Focus is split by design: keyboard goes to whichever side was clicked last — Avalonia
+shortcuts (Ctrl+S) when the shell has focus, viewport keys (F) when the workspace does.
+
 ## Shutdown choreography
 
-Either window can end the app; both paths join the render thread exactly once:
+Both paths join the render thread exactly once:
 
 * **Avalonia exit** (menu or ✕): `desktop.ShutdownRequested` → `EngineService.Shutdown()`
-  → enqueue `ShutdownCommand` + `Thread.Join` (5 s cap).
-* **Workspace closed** (raylib ✕): render loop exits → `Stopped` event → marshaled →
-  `desktop.Shutdown()` (the `_stopping` flag prevents the bounce-back).
+  → enqueue `ShutdownCommand` + `Thread.Join` (5 s cap). `RaylibHost` detaches the child
+  HWND on teardown; the engine destroys the window itself via `CloseWindow`.
+* **Workspace closed** (only possible in non-embedded fallback mode): render loop exits →
+  `Stopped` event → marshaled → `desktop.Shutdown()` (the `_stopping` flag prevents the
+  bounce-back).
 
 ## Upgrade path: real docking in the shell (Dock.Avalonia)
 

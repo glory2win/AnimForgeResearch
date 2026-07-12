@@ -24,6 +24,7 @@ namespace Prani.Engine;
 public sealed class RenderHost
 {
     private readonly ConcurrentQueue<IEngineCommand> _commands = new();
+    private readonly ManualResetEventSlim _windowReady = new(false);
     private Thread? _thread;
     private volatile bool _stopRequested;
 
@@ -34,6 +35,18 @@ public sealed class RenderHost
 
     public bool IsRunning => _thread is { IsAlive: true };
 
+    /// <summary>
+    /// Embedded mode: the window is created borderless + hidden so a host UI (Avalonia)
+    /// can reparent it as a native child control instead of it living on the desktop.
+    /// </summary>
+    public bool Embedded { get; private set; }
+
+    /// <summary>Native handle (HWND on Windows) of the raylib window, valid once WaitForWindow returns.</summary>
+    public IntPtr WindowHandle { get; private set; }
+
+    /// <summary>Blocks until the render thread has created the window (or timeout).</summary>
+    public bool WaitForWindow(TimeSpan timeout) => _windowReady.Wait(timeout);
+
     /// <summary>Raised after any scene mutation, with a UI-safe snapshot. Render-thread callback!</summary>
     public event Action<SceneSnapshot>? SceneChanged;
     /// <summary>Raised when the render loop has fully shut down. Render-thread callback!</summary>
@@ -41,9 +54,10 @@ public sealed class RenderHost
 
     public void Enqueue(IEngineCommand command) => _commands.Enqueue(command);
 
-    public void Start()
+    public void Start(bool embedded = false)
     {
         if (IsRunning) return;
+        Embedded = embedded;
         _stopRequested = false;
         _thread = new Thread(RunLoop) { Name = "Prani.RenderThread", IsBackground = false };
         _thread.Start();
@@ -61,10 +75,36 @@ public sealed class RenderHost
 
     private void RunLoop()
     {
+        try
+        {
+            RunLoopCore();
+        }
+        catch (Exception ex)
+        {
+            // A crash on this thread would otherwise take the process down with no trace.
+            CrashLog.Write("RenderThread", ex);
+            Log.Error($"Render thread crashed: {ex.Message} (see prani-crash.log)");
+            try { if (Raylib.IsWindowReady()) Raylib.CloseWindow(); } catch { /* teardown best-effort */ }
+            Stopped?.Invoke();
+        }
+    }
+
+    private void RunLoopCore()
+    {
         Raylib.SetTraceLogLevel(TraceLogLevel.Warning);
-        Raylib.SetConfigFlags(ConfigFlags.Msaa4xHint | ConfigFlags.ResizableWindow | ConfigFlags.VSyncHint);
+        var flags = ConfigFlags.Msaa4xHint | ConfigFlags.ResizableWindow | ConfigFlags.VSyncHint;
+        if (Embedded)
+        {
+            // Borderless + hidden: the Avalonia shell reparents this window into itself
+            // (RaylibHost control) and shows it once it is a child.
+            flags |= ConfigFlags.UndecoratedWindow | ConfigFlags.HiddenWindow;
+        }
+        Raylib.SetConfigFlags(flags);
         Raylib.InitWindow(1600, 900, "Prani — Workspace");
         Raylib.SetExitKey(KeyboardKey.Null); // ESC must not kill the tool
+
+        unsafe { WindowHandle = (IntPtr)Raylib.GetWindowHandle(); }
+        _windowReady.Set();
 
         _viewports = new ViewportManager();
         _imgui = new ImGuiLayer();
@@ -88,6 +128,16 @@ public sealed class RenderHost
 
             DrainCommands();
             if (_stopRequested) break;
+
+            // As an embedded child window we must claim keyboard focus on click ourselves
+            // (Win32 only activates top-level windows on mouse-down).
+            if (Embedded && OperatingSystem.IsWindows() && !Raylib.IsWindowFocused()
+                && (Raylib.IsMouseButtonPressed(MouseButton.Left)
+                    || Raylib.IsMouseButtonPressed(MouseButton.Middle)
+                    || Raylib.IsMouseButtonPressed(MouseButton.Right)))
+            {
+                Win32.SetFocus(WindowHandle);
+            }
 
             // 1) 3D content into each viewport's render texture.
             _viewports.RenderAll((cam, vp) => _renderer.Draw(_scene, cam, vp));
@@ -237,4 +287,10 @@ public sealed class RenderHost
     }
 
     private void PublishSnapshot() => SceneChanged?.Invoke(SceneSnapshot.Capture(_scene));
+
+    private static class Win32
+    {
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        public static extern IntPtr SetFocus(IntPtr hWnd);
+    }
 }

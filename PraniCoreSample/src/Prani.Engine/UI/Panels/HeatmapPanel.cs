@@ -56,7 +56,12 @@ public sealed class HeatmapPanel : Panel
     private void DrawGrid()
     {
         Vector2 avail = ImGui.GetContentRegionAvail();
-        avail.Y = MathF.Max(avail.Y - 4, 40);
+        avail.Y -= 4;
+        // A docked panel can be squeezed to zero/negative content size while dragging
+        // splitters — InvisibleButton with a non-positive size triggers an ImGui assert,
+        // which aborts the whole process. Bail out instead of crashing.
+        if (avail.X < 16.0f || avail.Y < 16.0f)
+            return;
         Vector2 origin = ImGui.GetCursorScreenPos();
         var drawList = ImGui.GetWindowDrawList();
 

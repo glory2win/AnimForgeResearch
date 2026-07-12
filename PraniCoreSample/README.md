@@ -10,8 +10,10 @@ three-layer stack chosen in the tools-strategy discussion:
 | Application shell | **Avalonia 11** | File menu (New/Open/Import/Save/Save As/Exit), dialogs, precise property editing, log |
 | Math core | **animforge_core** (`AnimForge.Core`) | Springs/dampers, two-bone IK, distance matching, colormaps, heatmap fields |
 
-Two windows, one process: the Avalonia **Control Center** (main thread) and the raylib
-**Workspace** (dedicated render thread) talk through a thread-safe command queue.
+One window, one process: the raylib **Workspace** (dedicated render thread) is embedded
+in the center of the Avalonia shell as a native child control (Win32 reparenting via
+`RaylibHost`); the two sides talk through a thread-safe command queue. On non-Windows
+platforms the workspace falls back to a separate OS window.
 
 ## Quick start
 
@@ -44,6 +46,7 @@ PraniCoreSample/
 │   │   ├── Render/            # SceneRenderer (grid, meshes, selection)
 │   │   └── UI/                # ImGuiLayer + Panels (Outliner/Properties/Heatmap/Stats/Console)
 │   └── Prani.App/             # Avalonia shell. File menu, dialogs, MVVM.
+│       └── Controls/RaylibHost.cs  # embeds the raylib window (SetParent/WS_CHILD)
 └── docs/                      # ← detailed docs, one per subsystem
 ```
 
