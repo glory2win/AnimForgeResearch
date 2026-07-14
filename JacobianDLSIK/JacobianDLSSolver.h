@@ -13,7 +13,7 @@
 // 3x3 linear solve — there is no NxN or 3Nx3N matrix anywhere. This follows
 // from the JJt formulation of DLS plus the identity
 //     sum over orthonormal axes a of (a x r)(a x r)^T  =  |r|^2 I - r r^T
-// (THEORY.md section 7).
+// (THEORY.md section 3.7).
 
 #pragma once
 
@@ -40,7 +40,7 @@ struct YOURGAME_API FDLSJoint
 	 * Per-joint weight in [0,1]. 0 = locked, 1 = fully free.
 	 * Mathematically this is the diagonal of W in dTheta = W J^T (J W J^T + L^2 I)^-1 e,
 	 * i.e. an inverse stiffness: lower weight -> the least-squares solution
-	 * routes less of the motion through this joint (THEORY.md section 9).
+	 * routes less of the motion through this joint (THEORY.md section 3.8).
 	 */
 	float Weight = 1.0f;
 
@@ -77,14 +77,14 @@ struct YOURGAME_API FJacobianDLSSettings
 	 * Base damping lambda, in length units (cm). This is THE knob of DLS:
 	 * the per-mode gain is sigma/(sigma^2 + lambda^2) instead of 1/sigma, so the
 	 * response to error along a near-singular direction is bounded by 1/(2*lambda)
-	 * instead of exploding. Rule of thumb: 1-5% of chain length. See THEORY.md section 6.
+	 * instead of exploding. Rule of thumb: 1-5% of chain length. See THEORY.md section 3.6.
 	 */
 	double Damping = 1.0;
 
 	/**
 	 * Extra lambda blended in as the chain approaches a singular configuration,
 	 * detected via the isotropy of J W J^T (Nakamura-style adaptive damping,
-	 * THEORY.md section 8). 0 disables adaptation.
+	 * THEORY.md section 3.10). 0 disables adaptation.
 	 */
 	double MaxExtraDamping = 20.0;
 

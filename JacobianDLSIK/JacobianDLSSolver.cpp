@@ -130,7 +130,7 @@ int32 FJacobianDLSSolver::Solve(TArrayView<FDLSJoint> Joints, const FTransform& 
 
 		// M = J W J^T = sum_i w_i * (|r_i|^2 I - r_i r_i^T),  r_i = effector - joint_i.
 		// This is the whole 3x(3N) Jacobian collapsed to 3x3 in one O(N) pass
-		// (THEORY.md section 7). The tip joint is skipped: r_tip = 0, it cannot
+		// (THEORY.md section 3.7). The tip joint is skipped: r_tip = 0, it cannot
 		// move its own origin.
 		double M[3][3] = { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
 		for (int32 i = 0; i < NumJoints - 1; ++i)
@@ -155,7 +155,7 @@ int32 FJacobianDLSSolver::Solve(TArrayView<FDLSJoint> Joints, const FTransform& 
 
 		// Adaptive damping: isotropy = det(M)/(trace(M)/3)^3 in [0,1] by AM-GM,
 		// hits 0 exactly when M is singular. Ramp extra lambda in quadratically
-		// below the threshold (Nakamura & Hanafusa style, THEORY.md section 8).
+		// below the threshold (Nakamura & Hanafusa style, THEORY.md section 3.10).
 		double Lambda = Settings.Damping;
 		{
 			const double Trace = M[0][0] + M[1][1] + M[2][2];

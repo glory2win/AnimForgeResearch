@@ -1,0 +1,95 @@
+<svg viewBox="0 0 860 520" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="flowArrow" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L9,4 L0,8 z" fill="#4a5568"/>
+    </marker>
+    <marker id="loopArrow" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L9,4 L0,8 z" fill="#2b6cb0"/>
+    </marker>
+  </defs>
+  <rect width="860" height="520" fill="#ffffff"/>
+  <text x="430" y="28" text-anchor="middle" font-size="17" font-weight="bold" fill="#1a202c">Data flow: AnimGraph &#8594; solver loop &#8594; pose</text>
+
+  <!-- ===== Anim node stage (top row) ===== -->
+  <rect x="30" y="50" width="800" height="92" rx="10" fill="#faf5ff" stroke="#6b46c1" stroke-width="1.5"/>
+  <text x="46" y="72" font-size="13" font-weight="bold" fill="#6b46c1">FAnimNode_JacobianDLSIK &#8212; anim worker thread, once per frame</text>
+
+  <rect x="46" y="84" width="180" height="46" rx="7" fill="#ffffff" stroke="#6b46c1" stroke-width="1.3"/>
+  <text x="136" y="103" text-anchor="middle" font-size="12.5" fill="#2d3748">incoming component-space</text>
+  <text x="136" y="119" text-anchor="middle" font-size="12.5" fill="#2d3748">pose + effector target</text>
+
+  <line x1="226" y1="107" x2="266" y2="107" stroke="#4a5568" stroke-width="2" marker-end="url(#flowArrow)"/>
+
+  <rect x="268" y="84" width="180" height="46" rx="7" fill="#ffffff" stroke="#6b46c1" stroke-width="1.3"/>
+  <text x="358" y="103" text-anchor="middle" font-size="12.5" fill="#2d3748">build chain root&#8594;tip:</text>
+  <text x="358" y="119" text-anchor="middle" font-size="12.5" fill="#2d3748">FDLSJoint[] (local rot + offset)</text>
+
+  <line x1="448" y1="107" x2="488" y2="107" stroke="#4a5568" stroke-width="2" marker-end="url(#flowArrow)"/>
+
+  <rect x="490" y="84" width="150" height="46" rx="7" fill="#ffffff" stroke="#6b46c1" stroke-width="1.3"/>
+  <text x="565" y="103" text-anchor="middle" font-size="12.5" fill="#2d3748">target &#8594; component</text>
+  <text x="565" y="119" text-anchor="middle" font-size="12.5" fill="#2d3748">space (world/bone)</text>
+
+  <line x1="640" y1="107" x2="680" y2="107" stroke="#4a5568" stroke-width="2" marker-end="url(#flowArrow)"/>
+
+  <rect x="682" y="84" width="132" height="46" rx="7" fill="#ebf8ff" stroke="#2b6cb0" stroke-width="1.5"/>
+  <text x="748" y="111" text-anchor="middle" font-size="13" font-weight="bold" fill="#2b6cb0">Solve()</text>
+
+  <line x1="748" y1="130" x2="748" y2="168" stroke="#4a5568" stroke-width="2" marker-end="url(#flowArrow)"/>
+
+  <!-- ===== Solver loop (middle) ===== -->
+  <rect x="30" y="170" width="800" height="250" rx="10" fill="#ebf8ff" stroke="#2b6cb0" stroke-width="1.5"/>
+  <text x="46" y="192" font-size="13" font-weight="bold" fill="#2b6cb0">FJacobianDLSSolver &#8212; iterate up to MaxIterations (typ. converges in 3&#8211;8)</text>
+
+  <!-- loop boxes: two rows -->
+  <rect x="46" y="210" width="176" height="56" rx="7" fill="#ffffff" stroke="#2b6cb0" stroke-width="1.3"/>
+  <text x="134" y="230" text-anchor="middle" font-size="12.5" fill="#2d3748">1. error  e = target &#8722; p&#8337;</text>
+  <text x="134" y="248" text-anchor="middle" font-size="12.5" fill="#2d3748">&#8804; tol? done. clamp &#8214;e&#8214;</text>
+
+  <line x1="222" y1="238" x2="258" y2="238" stroke="#2b6cb0" stroke-width="2" marker-end="url(#loopArrow)"/>
+
+  <rect x="260" y="210" width="200" height="56" rx="7" fill="#ffffff" stroke="#2b6cb0" stroke-width="1.3"/>
+  <text x="360" y="230" text-anchor="middle" font-size="12.5" fill="#2d3748">2. M = &#931; w&#7522;(&#8214;r&#7522;&#8214;&#178;I &#8722; r&#7522;r&#7522;&#7511;)</text>
+  <text x="360" y="248" text-anchor="middle" font-size="12.5" fill="#2d3748">O(N), one 3&#215;3 total</text>
+
+  <line x1="460" y1="238" x2="496" y2="238" stroke="#2b6cb0" stroke-width="2" marker-end="url(#loopArrow)"/>
+
+  <rect x="498" y="210" width="176" height="56" rx="7" fill="#ffffff" stroke="#2b6cb0" stroke-width="1.3"/>
+  <text x="586" y="230" text-anchor="middle" font-size="12.5" fill="#2d3748">3. isotropy of M</text>
+  <text x="586" y="248" text-anchor="middle" font-size="12.5" fill="#2d3748">&#8594; adaptive &#955;</text>
+
+  <line x1="674" y1="238" x2="710" y2="238" stroke="#2b6cb0" stroke-width="2" marker-end="url(#loopArrow)"/>
+
+  <rect x="712" y="210" width="104" height="56" rx="7" fill="#ffffff" stroke="#2b6cb0" stroke-width="1.3"/>
+  <text x="764" y="230" text-anchor="middle" font-size="12.5" fill="#2d3748">4. Cholesky</text>
+  <text x="764" y="248" text-anchor="middle" font-size="12.5" fill="#2d3748">(M+&#955;&#178;I)y = e</text>
+
+  <!-- down and back along second row -->
+  <line x1="764" y1="266" x2="764" y2="306" stroke="#2b6cb0" stroke-width="2" marker-end="url(#loopArrow)"/>
+
+  <rect x="608" y="308" width="208" height="56" rx="7" fill="#ffffff" stroke="#2b6cb0" stroke-width="1.3"/>
+  <text x="712" y="328" text-anchor="middle" font-size="12.5" fill="#2d3748">5. per joint: &#969;&#7522; = w&#7522;(r&#7522; &#215; y)</text>
+  <text x="712" y="346" text-anchor="middle" font-size="12.5" fill="#2d3748">clamp angle, quat exp-map</text>
+
+  <line x1="608" y1="336" x2="572" y2="336" stroke="#2b6cb0" stroke-width="2" marker-end="url(#loopArrow)"/>
+
+  <rect x="368" y="308" width="202" height="56" rx="7" fill="#ffffff" stroke="#2b6cb0" stroke-width="1.3"/>
+  <text x="469" y="328" text-anchor="middle" font-size="12.5" fill="#2d3748">6. swing/twist limit</text>
+  <text x="469" y="346" text-anchor="middle" font-size="12.5" fill="#2d3748">projection per joint</text>
+
+  <line x1="368" y1="336" x2="332" y2="336" stroke="#2b6cb0" stroke-width="2" marker-end="url(#loopArrow)"/>
+
+  <rect x="188" y="308" width="142" height="56" rx="7" fill="#ffffff" stroke="#2b6cb0" stroke-width="1.3"/>
+  <text x="259" y="328" text-anchor="middle" font-size="12.5" fill="#2d3748">7. FK refresh</text>
+  <text x="259" y="346" text-anchor="middle" font-size="12.5" fill="#2d3748">positions/rotations</text>
+
+  <!-- loop back to step 1 -->
+  <path d="M 188 336 L 134 336 L 134 270" fill="none" stroke="#2b6cb0" stroke-width="2" marker-end="url(#loopArrow)"/>
+  <text x="120" y="392" font-size="12.5" fill="#2b6cb0" font-style="italic">repeat until converged / budget spent</text>
+
+  <!-- ===== Output stage ===== -->
+  <line x1="430" y1="420" x2="430" y2="448" stroke="#4a5568" stroke-width="2" marker-end="url(#flowArrow)"/>
+  <rect x="220" y="450" width="420" height="52" rx="10" fill="#f0fff4" stroke="#2f855a" stroke-width="1.5"/>
+  <text x="430" y="472" text-anchor="middle" font-size="13" font-weight="bold" fill="#2f855a">write solved component-space transforms back to the pose</text>
+  <text x="430" y="490" text-anchor="middle" font-size="12.5" fill="#4a5568">(scale preserved &#183; Alpha blend by the base class &#183; children follow automatically)</text>
+</svg>

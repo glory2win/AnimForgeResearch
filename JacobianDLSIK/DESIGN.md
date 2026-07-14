@@ -1,24 +1,21 @@
 # JacobianDLSIK — Design & Implementation Notes
 
 THEORY.md derives the math; this document explains how the code is shaped and
-why. Section references like "§7" point into THEORY.md.
+why. Section references like "§3.7" point into THEORY.md.
 
 ## 1. Architecture
 
 Two layers, deliberately separated:
 
-```mermaid
-flowchart LR
-    subgraph AnimGraph["AnimGraph (editor)"]
-        GN["UAnimGraphNode_JacobianDLSIK\n(palette entry, editor module)"]
-    end
-    subgraph Runtime["Runtime (anim worker thread)"]
-        AN["FAnimNode_JacobianDLSIK\npose I/O, spaces, bone refs"]
-        SV["FJacobianDLSSolver\npure math, no engine deps beyond FVector/FQuat"]
-    end
-    GN -- "compiles to" --> AN
-    AN -- "FDLSJoint array + target" --> SV
-    SV -- "solved local rotations + FK" --> AN
+```
+┌─ editor ────────────────────────┐      ┌─ runtime (anim worker thread) ─────────────────┐
+│ UAnimGraphNode_JacobianDLSIK    │      │ FAnimNode_JacobianDLSIK                        │
+│ (AnimGraph palette entry)       │─────▶│   pose I/O, bone spaces, LODs, debug           │
+└─────────────────────────────────┘compiles      │  FDLSJoint[] + target   ▲ solved pose  │
+                                      to  │      ▼                         │              │
+                                          │ FJacobianDLSSolver — pure math,│no engine deps│
+                                          │ beyond FVector/FQuat           │              │
+                                          └────────────────────────────────────────────────┘
 ```
 
 - **`FJacobianDLSSolver`** ([JacobianDLSSolver.h](JacobianDLSSolver.h)) knows
@@ -34,22 +31,13 @@ flowchart LR
 
 ## 2. The solve loop
 
-```mermaid
-flowchart TD
-    A["FK: component-space positions/rotations"] --> B{"|target − effector| ≤ tolerance?"}
-    B -- yes --> Z["done"]
-    B -- no --> C["clamp error to MaxErrorStep (§10)"]
-    C --> D["accumulate M = Σ wᵢ(|rᵢ|²I − rᵢrᵢᵀ)  — O(N) (§7)"]
-    D --> E["isotropy = det(M)/(tr(M)/3)³ → adaptive λ (§8)"]
-    E --> F["Cholesky solve (M + λ²I)y = e  — one 3×3"]
-    F --> G["per joint: ωᵢ = wᵢ(rᵢ×y), clamp angle, exp-map to quat,\nrebuild local rotation vs pre-step parent"]
-    G --> H["swing/twist limit projection (§10)"]
-    H --> A
-```
+![Solve loop](Diagrams/solve_loop.svg)
+
+Full pseudocode with section references: THEORY.md §4.
 
 ## 3. Decisions worth defending
 
-**Why the `JJᵀ` form and never an explicit Jacobian matrix.** §7: the ball-joint
+**Why the `JJᵀ` form and never an explicit Jacobian matrix.** §3.7: the ball-joint
 basis-axes parameterization collapses `J·W·Jᵀ` to a running 3×3 sum and `JᵀY` to
 one cross product per joint. Storage O(1), work O(N), the only "linear algebra"
 is a 3×3 Cholesky. A textbook implementation allocates a 3×3N matrix and
@@ -109,12 +97,12 @@ regressions are visible. Compare against engine nodes with
 
 | case | behavior |
 |---|---|
-| target unreachable | extends toward target, settles at workspace boundary (clamped error, §10); tested |
+| target unreachable | extends toward target, settles at workspace boundary (clamped error, §3.10); tested |
 | chain starts exactly singular (perfectly straight, target on-axis) | the singular direction's response is exactly zero (r × y annihilates it); adaptive damping + any transverse pose noise walks it out over a few iterations. Character poses are never exactly singular in practice |
 | all weights 0 / chain < 2 bones | no-op, node validates |
 | non-uniform / non-unit bone scale on chain | positions come from scaled relative transforms but FK recomposes without scale — assume uniform scale 1 on the chain (true for characters; documented, not asserted) |
 | hard joint limits + far target | projection can park in a local minimum (limit surfing). Standard trade for hard limits; loosen limits or raise iterations |
-| effector rotation | tip bone rotation is intentionally untouched (its position columns are zero anyway, §3); orient the tip after the node, or see §7 |
+| effector rotation | tip bone rotation is intentionally untouched (its position columns are zero anyway, §3.2); orient the tip after the node, or see extensions below (§7 of this file) |
 | stretchy IK | not supported — rotations only, bone lengths inviolate |
 
 ## 7. Extensions (researched, not implemented)

@@ -12,14 +12,14 @@ headless via `-ExecCmds="Automation RunTests AnimForge.JacobianDLSIK; Quit"`.
 
 | test | claim it proves | THEORY.md |
 |---|---|---|
-| `FiniteDifferenceJacobian` | the analytic column $a\times(p_e-p_i)$ matches a finite-difference probe of FK — the solver descends the true gradient | §3 |
-| `ReachableTargetConverges` | in-workspace targets are hit within tolerance in the iteration budget | §2 |
-| `DampingBoundsSingularStep` | **the core DLS claim**: near-singular pose, on-axis target → undamped step explodes (>1 rad), damped step stays bounded (<0.35 rad), with all safety clamps disabled so λ alone does the bounding | §5–6 |
-| `UnreachableTargetStable` | out-of-reach targets: chain extends, points at the target (alignment >0.995), settles at the workspace boundary, no NaN/oscillation | §10 |
-| `JointLimitsRespected` | swing/twist limits are hard constraints under a target demanding far more bend | §10 |
-| `LockedJointDoesNotMove` | weight 0 locks a joint bit-exactly | §9 |
+| `FiniteDifferenceJacobian` | the analytic column a × (pₑ − pᵢ) matches a finite-difference probe of FK — the solver descends the true gradient | §3.2 |
+| `ReachableTargetConverges` | in-workspace targets are hit within tolerance in the iteration budget | §3.1 |
+| `DampingBoundsSingularStep` | **the core DLS claim**: near-singular pose, on-axis target → undamped step explodes (>1 rad), damped step stays bounded (<0.35 rad), with all safety clamps disabled so λ alone does the bounding | §3.5–3.6 |
+| `UnreachableTargetStable` | out-of-reach targets: chain extends, points at the target (alignment >0.995), settles at the workspace boundary, no NaN/oscillation | §3.10 |
+| `JointLimitsRespected` | swing/twist limits are hard constraints under a target demanding far more bend | §3.9 |
+| `LockedJointDoesNotMove` | weight 0 locks a joint bit-exactly | §3.8 |
 | `Deterministic` | identical inputs → identical outputs (worker threads, replay, netsync) | — |
-| `LongChainPerformance` | 30-joint × 12-iteration worst case; logs µs/solve, loose CI assert | §7, DESIGN §5 |
+| `LongChainPerformance` | 30-joint × 12-iteration worst case; logs µs/solve, loose CI assert | §3.7, DESIGN §5 |
 
 Notes on test design:
 
@@ -27,7 +27,7 @@ Notes on test design:
   they run in seconds and never flake on content.
 - `DampingBoundsSingularStep` uses a *near*-singular pose (2° bend), not an
   exact one: exactly-singular is the benign case (the response annihilates);
-  σ small-but-nonzero is where 1/σ actually detonates. See THEORY.md §5
+  σ small-but-nonzero is where 1/σ actually detonates. See THEORY.md §3.5
   "Why near singular is worse".
 - The perf test forces all iterations via an unreachable target + tiny
   tolerance so it measures worst case, not a lucky early-out.
@@ -46,7 +46,7 @@ The test that shows why this node exists. Mannequin, arm chain
 Expected: DLS eases into extension and eases out — no frame where the elbow
 snaps. With `a.AnimNode.JacobianDLSIK.Debug 1` and the AnimBP debugger you
 should see `iso` collapse toward 0 and `lambda` rise exactly at full extension.
-That's THEORY.md §8 visible on screen.
+That's THEORY.md §3.10 visible on screen.
 
 ## 3. Manual scenario: foot planting on a slope
 

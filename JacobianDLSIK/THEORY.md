@@ -1,443 +1,561 @@
 # Jacobian Damped Least Squares IK — Theory from First Principles
 
-This is the math behind [JacobianDLSSolver.cpp](JacobianDLSSolver.cpp), derived
-step by step. Nothing here is hand-waved: every equation the code uses is proven
-in this document, and every design choice traces back to one of these sections.
-Read it top to bottom once; afterwards each section stands alone as a reference.
+This document follows our research pipeline: **Concept → Understand → Code → Validate**.
 
-Notation: bold lowercase = vector, uppercase = matrix, $\theta$ = joint
-parameters, $\mathbf{e}$ = error, $N$ = joint count, cm/radians throughout.
+| section | pipeline stage | what you get |
+|---|---|---|
+| 1. Concept Overview | Concept | the problem, why existing UE IK fails, what DLS promises |
+| 2. Data Flow | Concept | the whole system as one diagram |
+| 3. Algorithm | Understand | the math, derived step by step |
+| 4. Pseudocode | Understand | the solve loop, language-free |
+| 5. C++ Code | Code | where each equation lives in the source |
+| 6. Review | Validate | trace one iteration by hand, with real numbers |
 
----
-
-## 1. The problem: IK is FK run backwards, and that's the hard direction
-
-**Forward kinematics (FK)** is a function: given all joint rotations
-$\theta = (\theta_1, \ldots, \theta_n)$, it produces the end effector position
-
-$$\mathbf{p}_e = f(\theta)$$
-
-FK is trivial — walk the chain, multiply transforms. It is smooth, cheap, and
-has exactly one answer.
-
-**Inverse kinematics (IK)** asks the reverse: given a desired target
-$\mathbf{t}$, find $\theta$ such that $f(\theta) = \mathbf{t}$. This is hard for
-structural reasons, not implementation reasons:
-
-- $f$ is **nonlinear** (built from sines/cosines of joint angles) — no closed
-  form for general chains.
-- Solutions are **not unique**: a 7-DOF arm reaching a 3-DOF position target has
-  a 4-dimensional *family* of valid poses (elbow can orbit). Which one do we want?
-- Solutions may **not exist**: target outside reach.
-- Solutions must be **temporally coherent**: frame N's answer must be near frame
-  N−1's answer, or the character pops.
-
-Only 2-bone chains have a nice closed form (law of cosines — that's exactly what
-UE's Two Bone IK node is). For everything longer, we solve iteratively: start at
-the current pose, take steps that reduce the error, stop when close enough. The
-question becomes: *what is a good step?* — and that's where the Jacobian enters.
+Notation used throughout (plain Unicode, no LaTeX):
+`θ` joint angles · `Δθ` joint step · `pₑ` effector position · `t` target ·
+`e` error vector · `J` Jacobian · `Jᵀ` transpose · `λ` damping · `σ` singular value ·
+`rᵢ` lever arm of joint i · `×` cross product · `‖v‖` length · `Σ` sum · `I` identity matrix.
 
 ---
 
-## 2. Linearization: the one idea underneath all Jacobian IK
+## 1. Concept Overview
 
-$f$ is nonlinear, but *any* smooth function looks linear if you zoom in far
-enough (first-order Taylor expansion):
+### 1.1 FK is easy, IK is the reverse — and the reverse is hard
 
-$$f(\theta + \Delta\theta) \approx f(\theta) + J(\theta)\,\Delta\theta$$
+**Forward kinematics (FK)**: given all joint rotations θ, compute where the hand ends up.
 
-$J$ is the **Jacobian matrix**: the matrix of all first partial derivatives,
+```
+pₑ = f(θ)        (walk the chain, multiply transforms — one answer, always)
+```
 
-$$J = \frac{\partial \mathbf{p}_e}{\partial \theta} \in \mathbb{R}^{3 \times n},
-\qquad J_{ij} = \frac{\partial (p_e)_i}{\partial \theta_j}$$
+**Inverse kinematics (IK)**: given where the hand *should* be, find the joint rotations.
 
-Read it column by column — that's the intuition that matters:
+```
+find θ  such that  f(θ) = t
+```
 
-> **Column $j$ of $J$ = the instantaneous velocity of the end effector if you
-> rotate only joint $j$ at unit speed.**
+![FK vs IK](Diagrams/fk_vs_ik.svg)
 
-The Jacobian answers: "if I wiggle each joint a little, which way does the hand
-move?" IK per iteration is then just:
+IK is hard for structural reasons, not implementation reasons:
 
-1. Measure the error $\mathbf{e} = \mathbf{t} - \mathbf{p}_e$ (where we want to
-   go, from where we are).
-2. Solve the *linear* system $J\,\Delta\theta = \mathbf{e}$ for a joint step.
-3. Apply $\Delta\theta$, recompute FK, repeat.
+- **Nonlinear** — f is built from sines/cosines of angles; no closed form for chains longer than 2 bones.
+- **Many answers** — a 7-DOF arm reaching a 3-DOF position target has an infinite *family* of valid poses (the elbow can orbit). Which one do we pick?
+- **No answer** — the target may be out of reach.
+- **Temporal coherence** — frame N's answer must be near frame N−1's answer, or the character pops.
 
-This is Newton's method for root finding, applied to $f(\theta) - \mathbf{t} = 0$.
-Everything else in this document — pseudoinverse, damping, singularities — is
-about making step 2 behave.
+Two-bone chains have an exact closed form (law of cosines — that is literally UE's Two Bone IK node). Everything longer is solved **iteratively**: start at the current pose, take steps that shrink the error, stop when close. The whole game is: *what is a good step?* The Jacobian answers that.
+
+### 1.2 What's wrong with the IK Unreal already ships
+
+| Solver | Method | Breaks down when… |
+|---|---|---|
+| **Two Bone IK** | analytic | …the chain has more than 2 bones. Ever. |
+| **CCD** (`AnimNode_CCDIK`) | rotate one joint at a time, greedily | chain *curls tip-heavy* (last-serviced joints grab all the error), poses depend on sweep order, oscillates near the target |
+| **FABRIK** (`AnimNode_Fabrik`) | slide joint *positions*, derive rotations after | **twist is undefined** (forearm roll drifts), joint limits are reprojection hacks, stiffness is not principled |
+| **Full Body IK** (PBIK) | position-based dynamics | great for full-body multi-effector; heavy and empirically-tuned for a single chain |
+
+And **all** undamped iterative methods share one deeper flaw — the singularity problem:
+
+![Singularity](Diagrams/singularity.svg)
+
+When a limb approaches full extension (planted straight leg, full-reach grab — everyday gameplay poses), the math of a plain Jacobian/pseudoinverse solver demands joint steps proportional to **1/σ**, where σ → 0 at extension. Result on screen: knee jitter, elbow pops, pose flips. Section 3.5 shows exactly why.
+
+### 1.3 What DLS promises
+
+**Damped Least Squares** changes the question. Instead of "reach the target at any cost", it asks:
+
+> minimize   (task error)² + λ² · (joint motion)²
+
+That one added term caps the solver's response at **1/(2λ) — bounded everywhere, by construction**. No pose, no target, no frame can produce an exploding joint step. Near-singular poses trade a little accuracy for stability — the leg *eases* into full extension instead of snapping. Far from singularities, DLS behaves identically to the ideal least-squares solution.
+
+On top of that, this implementation adds:
+- **O(N) cost with a single 3×3 solve per iteration** (the math trick in §3.7) — no big matrices, ever;
+- **per-joint weights** with exact meaning (§3.8) — "spine 20%, neck 60%, head 100%";
+- **swing/twist joint limits** as hard constraints (§3.9);
+- **adaptive damping** that pays the stability tax only near singular poses (§3.10).
+
+---
+
+## 2. Data Flow
+
+One frame, end to end:
+
+![Solve loop](Diagrams/solve_loop.svg)
+
+Split of responsibilities (why there are two layers):
+
+```
+┌───────────────────────────────────────────────────────────────────┐
+│ FAnimNode_JacobianDLSIK        (engine-facing, anim worker thread)│
+│   knows: skeletons, bone spaces, LODs, ref pose, debug draw      │
+│   does : pose → FDLSJoint[] → Solve() → pose                     │
+├───────────────────────────────────────────────────────────────────┤
+│ FJacobianDLSSolver             (pure math, engine-agnostic)      │
+│   knows: FVector/FQuat only — no skeleton, no UObject            │
+│   does : the loop in the diagram above                           │
+└───────────────────────────────────────────────────────────────────┘
+```
+
+The solver being pure math is what makes it unit-testable headless
+([Tests/JacobianDLSSolverTests.cpp](Tests/JacobianDLSSolverTests.cpp)) and reusable
+from a Control Rig unit or an editor tool later.
+
+---
+
+## 3. Algorithm
+
+### 3.1 Linearization — the one idea underneath all Jacobian IK
+
+f is nonlinear, but every smooth function looks **linear up close** (first-order Taylor expansion):
+
+```
+f(θ + Δθ)  ≈  f(θ) + J(θ)·Δθ
+```
+
+`J` is the **Jacobian**: the matrix of all first partial derivatives ∂pₑ/∂θ.
+It has 3 rows (x, y, z of the effector) and one column per joint DOF.
+
+Read it **column by column** — this is the intuition that matters:
+
+> **Column j of J = the instantaneous velocity of the end effector
+> if you rotate only joint j, at unit speed.**
+
+The Jacobian answers: *"if I wiggle each joint a little, which way does the hand move?"*
+With it, each IK iteration is just:
+
+```
+1.  e = t − pₑ                measure the error
+2.  solve J·Δθ = e            find a joint step (the LINEAR problem)
+3.  apply Δθ, redo FK          repeat until ‖e‖ small
+```
+
+This is Newton's method for root finding, applied to f(θ) − t = 0. Everything
+that follows — pseudoinverse, damping, singularities — is about making step 2 behave.
+
+### 3.2 The geometric Jacobian — deriving the columns
+
+We never differentiate f symbolically. For rotating joints the columns have a closed geometric form.
+
+**The rigid-body fact.** A body rotating with angular velocity ω about a point p moves any
+attached point x with linear velocity:
+
+```
+v = ω × (x − p)
+```
+
+(velocity is perpendicular to both the axis and the lever arm; grows with distance from the axis).
+
+**The consequence.** If joint i sits at position pᵢ and rotates about unit axis a at unit
+speed, everything downstream — including the effector — rotates rigidly around it. So:
+
+```
+∂pₑ/∂θᵢ  =  a × (pₑ − pᵢ)  =  a × rᵢ          where  rᵢ = pₑ − pᵢ  (the lever arm)
+```
 
 ![Jacobian geometry](Diagrams/jacobian_geometry.svg)
 
----
+Two properties you can *see* in the picture and should internalize:
 
-## 3. The geometric Jacobian: deriving the columns
+- **Long lever arms dominate.** ‖a × r‖ ≤ ‖r‖: the shoulder (far from the hand) gets big
+  columns, the wrist tiny ones. Least-squares solutions therefore naturally favor
+  root-side joints — usually desirable, and tunable with weights (§3.8).
+- **The tip bone's own columns are zero** (r = 0): rotating the hand can't move the
+  hand's origin. The solver skips it automatically, preserving animated hand orientation.
 
-We never differentiate $f$ symbolically. For rotational joints the columns have
-a closed geometric form.
+**Ball joints.** Animation bones are 3-DOF ball joints, not single-axis hinges. We model
+each as three revolute DOF about the fixed component-space axes eₓ, e_y, e_z → 3 columns
+per joint, J is 3 × 3N. This choice looks arbitrary until §3.7, where it makes the whole
+system collapse to 3×3.
 
-**Setup.** A rigid body rotating with angular velocity $\boldsymbol{\omega}$
-about a point $\mathbf{p}$ moves any attached point $\mathbf{x}$ with linear
-velocity
+### 3.3 Solving J·Δθ = e — least squares and the pseudoinverse
 
-$$\mathbf{v} = \boldsymbol{\omega} \times (\mathbf{x} - \mathbf{p})$$
+J is 3 × 3N — wide, not square, so `J⁻¹` does not exist. With more DOF than constraints
+the system is **underdetermined**: infinitely many Δθ move the hand the same way. We need
+a selection rule.
 
-(the classic rigid-body velocity relation — velocity is perpendicular to both
-the rotation axis and the lever arm, magnitude grows with distance from the axis).
+The classical rule is the **Moore–Penrose pseudoinverse** `J⁺`, which returns the
+*minimum-norm* solution — the smallest total joint motion that achieves the task:
 
-**Consequence.** If joint $i$ sits at position $\mathbf{p}_i$ and rotates about
-unit axis $\mathbf{a}_i$ at rate $\dot\theta_i$, the entire rest of the chain —
-including the end effector — rotates rigidly around it. So the effector velocity
-contributed by joint $i$ is:
+```
+Δθ = J⁺·e = Jᵀ·(J·Jᵀ)⁻¹·e
+```
 
-$$\frac{\partial \mathbf{p}_e}{\partial \theta_i} = \mathbf{a}_i \times (\mathbf{p}_e - \mathbf{p}_i)$$
+- Target achievable → among all joint steps that achieve it, take the one that disturbs
+  the pose least. Exactly what animation wants.
+- Target not achievable → take the step minimizing ‖J·Δθ − e‖. Best effort.
 
-That's the whole geometric Jacobian for position targets:
+Note the shape trick already at work: `J·Jᵀ` is only **3×3** no matter how many joints —
+we invert in *task space* (3D), never in joint space (3N-D).
 
-$$J = \Big[\; \mathbf{a}_1 \times \mathbf{r}_1 \;\Big|\; \mathbf{a}_2 \times \mathbf{r}_2 \;\Big|\; \cdots \;\Big], \qquad \mathbf{r}_i = \mathbf{p}_e - \mathbf{p}_i$$
+This works beautifully… until the arm straightens.
 
-Two properties you can *see* and should internalize:
+### 3.4 The SVD lens — seeing what a matrix really does
 
-- **Long lever arms dominate.** $\|\mathbf{a} \times \mathbf{r}\| \le \|\mathbf{r}\|$:
-  the shoulder (far from the hand) has big columns, the wrist (near the hand)
-  has tiny ones. Least-squares solutions therefore naturally favor moving joints
-  near the root — often desirable, tunable with weights (§9).
-- **The tip bone's own columns are zero** ($\mathbf{r} = 0$): rotating the hand
-  cannot move the hand's origin. The solver skips it automatically.
+Any matrix factors as `J = U·Σ·Vᵀ` (singular value decomposition): rotate joint space (V),
+scale by the **singular values** σ₁ ≥ σ₂ ≥ σ₃ ≥ 0, rotate task space (U). Physically:
 
-**Ball joints.** Animation bones aren't single-axis hinges; they're 3-DOF ball
-joints. We model each as three revolute DOF about the component-space basis axes
-$\mathbf{e}_x, \mathbf{e}_y, \mathbf{e}_z$, giving 3 columns per joint and
-$J \in \mathbb{R}^{3 \times 3N}$. This choice looks arbitrary until §7, where it
-makes the entire system collapse.
+> The columns of U are the principal directions the effector can move;
+> each σ says *how easily* it moves that way (cm of hand motion per radian of joint motion).
 
-**Orientation targets** (not implemented here, see DESIGN.md §7): stack 3 more
-rows; the angular-velocity rows of column $i$ are just $\mathbf{a}_i$ itself.
+Push the pseudoinverse through the SVD and the danger becomes visible:
 
----
+```
+Δθ = Σₖ  (1/σₖ) · vₖ · (uₖ·e)
+         ↑
+         the gain applied to error along direction uₖ
+```
 
-## 4. Solving JΔθ = e: least squares and the pseudoinverse
+**As σₖ → 0 the gain 1/σₖ → ∞.** There's the bomb, in plain sight.
 
-$J$ is $3 \times 3N$ — wide, not square. $J^{-1}$ does not exist. With more DOF
-than constraints the system is **underdetermined**: infinitely many
-$\Delta\theta$ produce the same hand motion. We need a principled selection rule.
+### 3.5 Singularities — what they are and why "near" is worse than "at"
 
-The classical choice is the **Moore–Penrose pseudoinverse** $J^+$, which picks
-the *minimum-norm* solution:
+A **singular configuration** is a pose where some task direction has σ = 0 — the mechanism
+*cannot* move the effector that way, no matter what the joints do. The everyday cases:
 
-$$\Delta\theta = J^+ \mathbf{e} = J^T (J J^T)^{-1} \mathbf{e}$$
+- **Fully extended limb** (boundary singularity): arm straight, target further out. Every
+  column a × rᵢ is perpendicular to the arm axis, so motion *along* the arm is impossible.
+  This is the planted straight leg and the full-reach grab — constant gameplay poses.
+- **Aligned axes** (internal singularity): two joints' effective axes line up, their
+  columns become linearly dependent — a DOF silently lost.
 
-- If the target motion is achievable: among all joint steps that achieve it,
-  take the one with the smallest total joint motion (least energy, least pose
-  disturbance — exactly what animation wants).
-- If it isn't achievable (overdetermined case): take the step minimizing
-  $\|J\Delta\theta - \mathbf{e}\|$ — best effort.
+**Exactly at** σ = 0, a careful implementation just drops that direction (defines 1/σ = 0).
+The disaster is the **neighborhood**: σ = 0.01 means gain 100 — a 10 cm error component
+demands ~1000 radians of joint motion in one step. On screen:
 
-Note the shape trick already appearing: $JJ^T$ is only $3 \times 3$ no matter
-how many joints. We invert in *task space* (3D), never in joint space (3N-D).
-
-This works beautifully — until the arm straightens.
-
----
-
-## 5. Singularities: where the pseudoinverse explodes
-
-### The SVD lens
-
-Any matrix decomposes as $J = U \Sigma V^T$ (singular value decomposition):
-rotate task space ($U$), scale by the singular values
-$\sigma_1 \ge \sigma_2 \ge \sigma_3 \ge 0$, rotate joint space ($V$). Physically:
-
-> The columns of $U$ are the principal directions the effector can move; each
-> $\sigma_k$ is *how easily* it moves that way (cm of hand motion per radian of
-> coordinated joint motion).
-
-The pseudoinverse in SVD terms:
-
-$$J^+ = V \Sigma^+ U^T, \qquad \Delta\theta = \sum_{k} \frac{1}{\sigma_k}\, \mathbf{v}_k (\mathbf{u}_k^T \mathbf{e})$$
-
-The gain applied to error along direction $\mathbf{u}_k$ is $1/\sigma_k$. There
-is the bomb, in plain sight: **as $\sigma_k \to 0$, the gain $\to \infty$.**
-
-### What a singularity physically is
-
-A **singular configuration** is a pose where some task-space direction has
-$\sigma = 0$ — the mechanism *cannot* move the effector that way, no matter how
-the joints move. The everyday animation cases:
-
-- **Fully extended limb** (boundary singularity). Arm straight, reaching
-  further: every joint's velocity contribution is perpendicular to the arm axis.
-  Motion *along* the arm is impossible. This is the planted straight leg, the
-  full reach grab — it happens constantly in gameplay.
-- **Aligned axes** (internal singularity): two joints' rotation axes line up and
-  their columns become linearly dependent — DOF lost.
-
-### Why "near singular" is worse than "exactly singular"
-
-Exactly at $\sigma = 0$, a careful pseudoinverse just drops that direction
-(defines $1/\sigma = 0$). The disaster is the *neighborhood*: $\sigma = 0.01$
-means gain 100. A 10 cm error component demands ~1000 radians of joint motion in
-one step. In practice you see:
-
-- **jitter/vibration** as the leg approaches straight — tiny target noise ×
-  huge gain,
+- **jitter** as the leg approaches straight — tiny target noise × huge gain,
 - **snapping/flipping** — the knee pops to the other solution branch,
-- error that *grows* between iterations, because a 1000-radian step lands
-  somewhere the linearization never promised anything about.
+- error that *grows* between iterations, because a 1000-radian step lands somewhere the
+  linear model never promised anything about.
 
-This is not a numerical bug you can epsilon away; the *math is doing exactly
-what you asked*: "reach the unreachable direction at any cost." The fix is to
-change the question — stop demanding zero error and start charging for joint
-motion.
+This is not a numerical bug you can epsilon away. The math is doing exactly what was asked:
+*"reach the unreachable direction at any cost."* The fix is to change the question.
 
-![Singularity illustration](Diagrams/singularity.svg)
+### 3.6 Damped Least Squares — the fix, derived
 
----
+DLS (also called Levenberg–Marquardt; brought to IK by Wampler 1986 and
+Nakamura & Hanafusa 1986) changes the objective to:
 
-## 6. Damped Least Squares: the fix, derived
+```
+minimize   ‖J·Δθ − e‖²  +  λ²·‖Δθ‖²
+           └─ task error ─┘   └─ joint motion cost ─┘
+```
 
-**Damped least squares** (DLS, also *Levenberg–Marquardt*, independently
-introduced to IK by Wampler 1986 and Nakamura & Hanafusa 1986) changes the
-objective from "minimize task error" to:
+λ is the **damping factor** — the exchange rate between task accuracy and joint effort.
+(This is Tikhonov regularization, the standard cure for ill-conditioned inverse problems.)
 
-$$\Delta\theta^* = \arg\min_{\Delta\theta}\; \underbrace{\|J\Delta\theta - \mathbf{e}\|^2}_{\text{task error}} \;+\; \lambda^2 \underbrace{\|\Delta\theta\|^2}_{\text{joint motion cost}}$$
+**Derivation.** The objective is a quadratic bowl in Δθ. Set its gradient to zero:
 
-$\lambda$ is the **damping factor**: the exchange rate between task accuracy and
-joint effort. This is Tikhonov regularization — the standard cure for
-ill-conditioned inverse problems everywhere in applied math.
+```
+2·Jᵀ·(J·Δθ − e) + 2·λ²·Δθ = 0
+⇒  (JᵀJ + λ²I)·Δθ = Jᵀ·e            ← the "normal equations",  (3N×3N system)
+```
 
-**Derivation.** Expand and set the gradient with respect to $\Delta\theta$ to zero:
+The matrix `JᵀJ + λ²I` is positive definite for λ > 0, so this is the unique global
+minimum — DLS has exactly one answer, always. Now the identity that makes it cheap.
+Since `Jᵀ·(JJᵀ + λ²I) = (JᵀJ + λ²I)·Jᵀ` (multiply out both sides — one line), we can
+swap which side gets inverted:
 
-$$\nabla = 2J^T(J\Delta\theta - \mathbf{e}) + 2\lambda^2 \Delta\theta = 0
-\;\Longrightarrow\; (J^T J + \lambda^2 I)\,\Delta\theta = J^T \mathbf{e}$$
+```
+┌─────────────────────────────────────┐
+│   Δθ = Jᵀ · (J·Jᵀ + λ²I)⁻¹ · e     │      ← THE equation this solver implements
+└─────────────────────────────────────┘
+```
 
-The Hessian $J^TJ + \lambda^2 I$ is positive definite for $\lambda > 0$, so this
-stationary point is the unique global minimum — the problem is a strictly convex
-quadratic. Now the identity that makes it cheap: since
-$J^T(JJ^T + \lambda^2 I) = (J^TJ + \lambda^2 I)J^T$,
+Same answer, but the matrix inverted is **3×3** (task space), not 3N×3N (joint space).
 
-$$\boxed{\;\Delta\theta = J^T \left(J J^T + \lambda^2 I\right)^{-1} \mathbf{e}\;}$$
-
-Same solution, but the matrix inverted is $3\times3$ (task space) instead of
-$3N\times3N$ (joint space). This is the equation the solver implements.
-
-**What damping does, in SVD terms.** Substituting $J = U\Sigma V^T$:
-
-$$\Delta\theta = \sum_k \frac{\sigma_k}{\sigma_k^2 + \lambda^2}\, \mathbf{v}_k (\mathbf{u}_k^T \mathbf{e})$$
-
-Compare the per-direction gains:
+**What damping does, per direction.** Substituting the SVD gives the per-direction gain:
 
 | | pseudoinverse | DLS |
 |---|---|---|
-| gain | $\dfrac{1}{\sigma}$ | $\dfrac{\sigma}{\sigma^2 + \lambda^2}$ |
-| $\sigma \gg \lambda$ | $1/\sigma$ | $\approx 1/\sigma$ (unchanged — far from singularity DLS *is* the pseudoinverse) |
-| $\sigma = \lambda$ | $1/\lambda$ | $1/2\lambda$ — the **maximum possible gain** |
-| $\sigma \to 0$ | $\to \infty$ 💥 | $\to \sigma/\lambda^2 \to 0$ — smoothly *gives up* on impossible directions |
+| gain along direction with singular value σ | `1/σ` | `σ/(σ² + λ²)` |
+| σ ≫ λ (healthy pose) | 1/σ | ≈ 1/σ — **identical**, damping invisible |
+| σ = λ | 1/λ | 1/(2λ) — the **maximum possible gain** |
+| σ → 0 (singular) | → ∞ 💥 | → σ/λ² → 0 — smoothly *gives up* on impossible directions |
 
 ![DLS gain curve](Diagrams/dls_gain_curve.svg)
 
-The gain is bounded by $1/(2\lambda)$ everywhere. That single bound is the whole
-value proposition: **no pose, no target, no frame can ever produce a joint step
-larger than error × 1/(2λ)** — jitter and snapping become impossible by
-construction, not by clamps and hacks. The cost is honest and visible: near
-singular poses the solver trades accuracy for stability, easing toward the
-target instead of hitting it exactly. For animation this trade *is* the desired
-behavior — a leg that eases into full extension reads as natural; a leg that
-snaps reads as broken.
+The gain is bounded by **1/(2λ) everywhere**. That single bound is the whole value
+proposition: jitter and snapping become impossible *by construction*, not by clamps and
+hacks. The price is honest and visible: near singular poses the solver eases toward the
+target instead of hitting it exactly — which is precisely how a natural limb behaves.
 
-**Units and tuning.** $J$'s entries have units cm/rad, and $\sigma$ scales with
-the lever arms, i.e. with chain length. $\lambda$ shares those units, so tune it
-relative to chain size: **1–5% of chain length** (a 60 cm arm → $\lambda$ ≈ 1–3).
-Too small = lively near singularities; too large = syrupy convergence everywhere.
+**Units and tuning.** J's entries are cm/rad and σ scales with lever-arm length, so λ
+shares those units. Tune relative to chain size: **1–5% of chain length**
+(60 cm arm → λ ≈ 1–3). Too small = lively near singularities; too big = syrupy everywhere.
 
----
+### 3.7 The O(N) trick — DLS with one 3×3 solve, no Jacobian matrix at all
 
-## 7. The performance identity: DLS in O(N) with one 3×3 solve
+This is what makes this implementation faster than a textbook one. Two identities
+eliminate the explicit Jacobian entirely.
 
-This is the section that makes this implementation faster than a textbook one.
-Two small identities eliminate the explicit Jacobian entirely.
-
-**Setup.** Ball joints as 3 revolute DOF about the fixed basis axes (§3), so
-joint $i$ contributes columns $\mathbf{e}_x \times \mathbf{r}_i,\;
-\mathbf{e}_y \times \mathbf{r}_i,\; \mathbf{e}_z \times \mathbf{r}_i$.
-
-**Identity 1 — $JJ^T$ has closed form.** Write the cross product as a matrix:
-$\mathbf{a} \times \mathbf{r} = -[\mathbf{r}]_\times \mathbf{a}$ where
-$[\mathbf{r}]_\times$ is the skew-symmetric cross-product matrix. Joint $i$'s
-block contribution to $JJ^T$ is
-
-$$\sum_{\mathbf{a} \in \{\mathbf{e}_x,\mathbf{e}_y,\mathbf{e}_z\}} (\mathbf{a}\times\mathbf{r}_i)(\mathbf{a}\times\mathbf{r}_i)^T
-= [\mathbf{r}_i]_\times \Big(\sum_{\mathbf{a}} \mathbf{a}\mathbf{a}^T\Big) [\mathbf{r}_i]_\times^T
-= [\mathbf{r}_i]_\times [\mathbf{r}_i]_\times^T$$
-
-because $\sum_\mathbf{a} \mathbf{a}\mathbf{a}^T = I$ for any orthonormal basis.
-And $[\mathbf{r}]_\times [\mathbf{r}]_\times^T = -[\mathbf{r}]_\times^2 = \|\mathbf{r}\|^2 I - \mathbf{r}\mathbf{r}^T$
-(expand it once by hand — it's three lines). Therefore:
-
-$$\boxed{\;M \;=\; JJ^T \;=\; \sum_{i} \left( \|\mathbf{r}_i\|^2 I - \mathbf{r}_i \mathbf{r}_i^T \right)\;}$$
-
-One 3×3 symmetric accumulation per joint. No Jacobian matrix is ever stored.
-(Physics aside: $\|\mathbf{r}\|^2 I - \mathbf{r}\mathbf{r}^T$ is precisely the
-inertia tensor of a unit point mass at $\mathbf{r}$ — $M$ is the "inertia" of
-the effector as seen through the joints. Singular pose ⇔ all $\mathbf{r}_i$
-collinear ⇔ degenerate inertia. This is the intuition behind §8.)
-
-**Identity 2 — $J^T\mathbf{y}$ is a cross product.** After solving the 3×3 system
-$(M + \lambda^2 I)\,\mathbf{y} = \mathbf{e}$, joint $i$'s three components of
-$\Delta\theta = J^T\mathbf{y}$ are $(\mathbf{a} \times \mathbf{r}_i) \cdot \mathbf{y}$
-for the three axes. By the scalar triple product
-$(\mathbf{a} \times \mathbf{r}) \cdot \mathbf{y} = \mathbf{a} \cdot (\mathbf{r} \times \mathbf{y})$,
-those three numbers are just the basis components of one vector:
-
-$$\boxed{\;\boldsymbol{\omega}_i = \mathbf{r}_i \times \mathbf{y}\;}$$
-
-The per-joint update is a single cross product, interpreted as a rotation vector
-(axis = direction, angle = magnitude) and applied via the exponential map
-`FQuat(axis, angle)`.
-
-**The complete algorithm per iteration** (this is `FJacobianDLSSolver::Solve`):
+**Identity 1 — J·Jᵀ has a closed form.** With ball joints as 3 DOF about the basis axes
+(§3.2), joint i contributes columns eₓ×rᵢ, e_y×rᵢ, e_z×rᵢ. Sum the outer products of
+those three columns and something beautiful happens:
 
 ```
-e  = target − effector                            // clamped, §10
-M  = Σᵢ wᵢ(‖rᵢ‖²I − rᵢrᵢᵀ)                        // O(N), one 3×3
-λ  = base + adaptive(isotropy of M)               // §8
-y  = (M + λ²I)⁻¹ e                                // one 3×3 Cholesky solve
-ωᵢ = wᵢ (rᵢ × y)  →  apply exp(ωᵢ) to joint i     // O(N)
-clamp joint limits, recompute FK                  // O(N)
+(eₓ×r)(eₓ×r)ᵀ + (e_y×r)(e_y×r)ᵀ + (e_z×r)(e_z×r)ᵀ  =  ‖r‖²·I − r·rᵀ
 ```
 
-Cost: **O(N) per iteration + one 3×3 Cholesky (~35 flops), zero heap
-allocations.** A generic DLS implementation builds a 3×3N Jacobian and does
-dense multiplies ($JJ^T$ alone is ~27N multiplies vs our ~12N, plus storage and
-cache traffic); an SVD-based one pays O(N) with a far larger constant. This
-formulation is also branch-light and SIMD-friendly.
+(Verify once by hand: write a×r = −[r]ₓ·a with the skew matrix [r]ₓ, use
+Σ a·aᵀ = I over any orthonormal basis, and [r]ₓ·[r]ₓᵀ = ‖r‖²I − rrᵀ. Three lines.)
+
+So the entire 3×3N Jacobian collapses to a running 3×3 sum:
+
+```
+┌──────────────────────────────────────────────┐
+│   M  =  J·Jᵀ  =  Σᵢ ( ‖rᵢ‖²·I − rᵢ·rᵢᵀ )    │      one 3×3 accumulation per joint
+└──────────────────────────────────────────────┘
+```
+
+Physics aside: `‖r‖²I − rrᵀ` is exactly the inertia tensor of a unit point mass at r.
+M is the "inertia" of the effector as seen through the joints — singular pose ⇔ all
+lever arms collinear ⇔ degenerate inertia. This intuition powers §3.10's singularity detector.
+
+**Identity 2 — Jᵀ·y is a cross product.** After solving the 3×3 system
+`(M + λ²I)·y = e`, joint i's three components of Δθ = Jᵀy are `(a×rᵢ)·y` for the three
+axes. By the scalar triple product `(a×r)·y = a·(r×y)`, those three numbers are simply
+the components of **one vector**:
+
+```
+┌──────────────────────┐
+│   ωᵢ = rᵢ × y        │      the rotation vector for joint i
+└──────────────────────┘        axis = direction of ωᵢ, angle = ‖ωᵢ‖ (radians)
+```
+
+Apply it as a quaternion via the exponential map (`FQuat(axis, angle)`). That's the whole
+per-joint update: **one cross product**.
+
+Cost per iteration: ~40 flops per joint for M, one 3×3 Cholesky (~35 flops), one cross +
+quat composition per joint. **O(N), zero allocations, no matrix storage.** A textbook DLS
+builds the 3×3N Jacobian and multiplies it out — same asymptotics, several times the
+constant, plus cache traffic.
+
+### 3.8 Per-joint weighting — stiffness with exact semantics
+
+"Use the shoulder more than the wrist. Barely involve the spine." Scaling joint updates
+*after* solving breaks convergence (the solve assumed motion the joints then refuse to do).
+The correct way charges different joints different prices *inside* the objective, which
+works out to a weighted DLS with per-DOF weight matrix W:
+
+```
+Δθ = W·Jᵀ·(J·W·Jᵀ + λ²I)⁻¹·e
+```
+
+Implementation cost: nearly free — the weight wᵢ multiplies joint i's term in both places:
+
+```
+M  = Σᵢ wᵢ·(‖rᵢ‖²I − rᵢrᵢᵀ)          ωᵢ = wᵢ·(rᵢ × y)
+```
+
+`w = 0` locks a joint exactly. `w = 0.2` makes it 5× more expensive than a free joint, and
+the least-squares trade-off *plans around it* instead of being surprised by it. Compare
+FABRIK, where stiffness is a position-lerp hack applied after the fact.
+
+### 3.9 Joint limits — swing/twist projection
+
+After each step, each local rotation is decomposed **relative to the reference pose** as
+`Rel = Swing · Twist` (UE: `FQuat::ToSwingTwist`), where Twist is the roll around the
+bone's own length axis and Swing is the tilt of that axis. Clamp each separately
+(cone for swing, min/max angle for twist), recompose.
+
+This is projected gradient descent, Gauss–Seidel flavored: later iterations re-solve
+*around* a clamped joint, routing the remaining error through the free ones. Hard limits
+can create local minima on extreme targets (documented in DESIGN.md §6) — the standard
+trade against soft-penalty limits, which never actually guarantee the constraint.
+
+### 3.10 Adaptive damping + two safeguards
+
+**Adaptive damping (Nakamura & Hanafusa).** Fixed λ is a compromise: big enough for the
+worst singular pose = sluggish in every normal pose. Better: *measure* how close to
+singular the pose is and ramp damping only there. Classical manipulability
+`w = √det(JJᵀ)` has units cm³ (thresholds don't transfer between chains), so we use a
+dimensionless version — for M's eigenvalues the AM–GM inequality gives:
+
+```
+isotropy = det(M) / (trace(M)/3)³   ∈ [0, 1]
+           1 → effector moves equally well in all directions
+           0 → singular (some σ = 0)
+
+λ = λ_base + λ_extra · (1 − isotropy/τ)²      when isotropy < τ  (default τ = 0.1)
+```
+
+det and trace of a matrix we already built: the detector is ~10 flops. The quadratic
+ramp keeps λ's derivative continuous at the threshold — no visible "damping kicked in" pop.
+
+**Safeguard 1 — clamped error (Buss & Kim).** The linear model is only honest near the
+current pose. If the target is 3 m away, don't feed a 300 cm error into a local
+linearization — clamp ‖e‖ to `MaxErrorStep` (≈ half chain length) and walk there over a
+few iterations. Also fixes the classic unreachable-target oscillation: the chain extends
+smoothly and settles at the workspace boundary.
+
+**Safeguard 2 — per-joint angle clamp.** Hard cap (default 10°/iteration) on each ‖ωᵢ‖.
+With sane damping it never engages; it exists so no tuning mistake can ever emit a broken
+pose to the renderer. Defense in depth, not a correctness mechanism.
 
 ---
 
-## 8. Adaptive damping: pay for stability only when needed
+## 4. Pseudocode
 
-Fixed $\lambda$ is a compromise: big enough to survive the worst singular pose
-means slower convergence in every normal pose. Nakamura & Hanafusa's insight:
-**measure how close to singular the current pose is, and ramp damping in only
-there.**
+```
+SOLVE(joints[0..N-1], base, target, settings):
+    FK(joints, base)                                # component-space positions
 
-The classical measure is manipulability $w = \sqrt{\det(JJ^T)}$, which goes to 0
-at singularities — but its scale depends on chain length (units cm³), making
-thresholds unportable. We use a dimensionless variant. For our $3\times3$
-$M = JJ^T$ with eigenvalues $\sigma_1^2, \sigma_2^2, \sigma_3^2$, define
+    repeat up to MaxIterations:
+        e = target − joints[N-1].position           # effector = tip joint origin
+        if ‖e‖ ≤ tolerance: stop                    # converged
+        if ‖e‖ > MaxErrorStep: e *= MaxErrorStep/‖e‖    # §3.10 clamped error
 
-$$\text{isotropy} = \frac{\det M}{(\operatorname{tr} M / 3)^3}
-= \frac{\sigma_1^2 \sigma_2^2 \sigma_3^2}{\left(\frac{\sigma_1^2+\sigma_2^2+\sigma_3^2}{3}\right)^3} \in [0, 1]$$
+        # -- build the 3×3 system (§3.6, §3.8) --
+        M = 0
+        for i in 0 .. N-2:                          # tip skipped: r = 0
+            r = effector − joints[i].position
+            M += wᵢ · (‖r‖²·I − r·rᵀ)
 
-By the AM–GM inequality this is at most 1 (all $\sigma$ equal: effector moves
-equally well in every direction) and exactly 0 when any $\sigma = 0$ (singular).
-It costs a determinant and a trace of a matrix we already built. Below a
-threshold $\tau$ (default 0.1), extra damping ramps in quadratically:
+        # -- adaptive damping (§3.10) --
+        iso = det(M) / (trace(M)/3)³
+        λ = λ_base + λ_extra·(1 − iso/τ)²  if iso < τ else λ_base
 
-$$\lambda = \lambda_{\text{base}} + \lambda_{\text{extra}} \left(1 - \frac{\text{isotropy}}{\tau}\right)^2$$
+        # -- the DLS solve (§3.6) --
+        y = cholesky_solve_3x3(M + λ²·I, e)
 
-Quadratic easing keeps $\partial\lambda/\partial\text{pose}$ continuous at the
-threshold — no visible "damping kicks in" discontinuity as the leg straightens.
+        # -- apply per-joint updates (§3.6, §3.9) --
+        for i in 0 .. N-2:
+            ωᵢ = wᵢ · ((effector − joints[i].position) × y)
+            clamp ‖ωᵢ‖ to MaxAngleStep
+            ΔQ = quat_exp(ωᵢ)                       # axis-angle → quaternion
+            # rebuild local rotation against the PRE-step parent:
+            # all deltas share one linearization point (DESIGN.md §3)
+            joints[i].localRot = inverse(oldParentRot) · ΔQ · oldComponentRot
+            if limited: clamp_swing_twist(joints[i])
 
----
-
-## 9. Per-joint weighting: stiffness done correctly
-
-Animators need "use the shoulder more than the wrist," "barely involve the
-spine." Scaling joint updates *after* solving breaks convergence (the solve
-assumed motion the joints then don't perform). The correct formulation charges
-different joints different prices *inside* the objective:
-
-$$\min \|J\Delta\theta - \mathbf{e}\|^2 + \lambda^2\, \Delta\theta^T W^{-1} \Delta\theta
-\;\Longrightarrow\;
-\Delta\theta = W J^T (J W J^T + \lambda^2 I)^{-1} \mathbf{e}$$
-
-($W$ = diagonal of per-DOF weights; verify by substituting into the normal
-equations — one line.) The solver's least-squares trade-off then *plans around*
-stiff joints instead of being surprised by them. Implementation cost: nearly
-free — $w_i$ multiplies joint $i$'s term in $M$ and its final $\boldsymbol{\omega}_i$:
-
-$$M = \sum_i w_i(\|\mathbf{r}_i\|^2 I - \mathbf{r}_i\mathbf{r}_i^T), \qquad
-\boldsymbol{\omega}_i = w_i (\mathbf{r}_i \times \mathbf{y})$$
-
-$w = 0$ locks a joint exactly; $w = 0.2$ makes it 5× more "expensive" than a
-free joint. This is a *principled* stiffness — compare FABRIK, where stiffness
-is approximated by lerping positions back after the fact.
+        FK(joints, base)                            # compose deltas down the chain
+```
 
 ---
 
-## 10. Two safeguards the iteration needs in practice
+## 5. C++ Code — where each equation lives
 
-**Clamped error (Buss & Kim).** The linear model is only honest near the current
-pose. If the target is 3 m away, don't feed a 300 cm error into a local
-linearization — clamp $\|\mathbf{e}\|$ to `MaxErrorStep` (≈ half chain length)
-and walk there over a few iterations. This also fixes the classic
-unreachable-target oscillation: the chain extends smoothly and settles at the
-workspace boundary instead of thrashing (proven by the
-`UnreachableTargetStable` test).
+| equation / concept | file : function |
+|---|---|
+| FK composition | [JacobianDLSSolver.cpp](JacobianDLSSolver.cpp) : `ForwardKinematics` |
+| `M = Σ wᵢ(‖rᵢ‖²I − rᵢrᵢᵀ)` | `Solve`, the accumulation loop |
+| isotropy + adaptive λ | `Solve`, the damping block |
+| `(M + λ²I)·y = e` | `SolveDamped3x3` (3×3 Cholesky — SPD by construction, cannot fail for λ > 0) |
+| `ωᵢ = wᵢ(rᵢ × y)` + exp map | `Solve`, the apply loop |
+| swing/twist limits | `ClampSwingTwist` |
+| pose ↔ solver conversion, spaces, LODs | [AnimNode_JacobianDLSIK.cpp](AnimNode_JacobianDLSIK.cpp) : `EvaluateSkeletalControl_AnyThread` |
+| chain building/validation | same file : `InitializeBoneReferences` |
+| AnimGraph palette node | [AnimGraphNode_JacobianDLSIK.cpp](AnimGraphNode_JacobianDLSIK.cpp) |
 
-**Per-joint angle clamp.** A hard cap (default 10°/iteration) on each
-$\|\boldsymbol{\omega}_i\|$. With sane damping it never engages; it exists so
-that no tuning mistake (λ = 0 at a singularity) can ever emit a broken pose to
-the renderer. Defense in depth, not a correctness mechanism.
-
-**Joint limits** are enforced by projection after each step: decompose each
-local rotation relative to the reference pose into swing (cone tilt) × twist
-(roll about the bone axis), clamp each, recompose (`ClampSwingTwist`). Projected
-gradient descent, Gauss–Seidel flavored: later iterations re-solve *around* a
-clamped joint, routing the remaining error through the free ones. Hard limits
-can create local minima (documented in DESIGN.md §6) — the standard trade
-against soft-penalty limits, which never guarantee the constraint.
+Reading order for the code: `ForwardKinematics` → `Solve` top to bottom with §4 beside it
+→ `SolveDamped3x3` → `ClampSwingTwist` → then the anim node's evaluate.
 
 ---
 
-## 11. Where existing UE solvers fall short — and where this one does
+## 6. Review — trace one iteration by hand
 
-| Solver | Method | Strengths | Weaknesses |
-|---|---|---|---|
-| **Two Bone IK** | analytic (law of cosines) | exact, ~free, predictable | 2 bones only, by definition |
-| **CCD** (`AnimNode_CCDIK`) | greedy: rotate each joint alone, tip→root sweeps | trivial, cheap/pass | **curls the chain tip-heavy** (last-serviced joints grab the error), order-dependent poses, oscillates near targets, no coordinated multi-joint trade-off |
-| **FABRIK** (`AnimNode_Fabrik`) | position-based forward/backward passes | fast, handles unreachable gracefully, uniform-ish bending | solves **positions, back-derives rotations → twist is undefined** (roll drift on characters), joint limits are reprojection hacks, stiffness non-principled, no orientation reasoning mid-chain |
-| **Full Body IK** (PBIK, Control Rig) | position-based dynamics | multi-effector, full body, mature | heavier; per-part stiffness tuning is empirical; overkill and less analyzable for single chains |
-| **Jacobian DLS** (this) | damped least squares | **one coordinated least-squares problem per step**: principled per-joint weighting (§9), true swing/twist limits (§10), *provably bounded* response at singularities (§6), O(N) (§7), works directly in rotation space (twist well-defined) | needs λ tuned to chain scale; iterative (though so are CCD/FABRIK/PBIK); hard limits can create local minima |
+Validate the math with a 2-joint arm you can draw on paper. Bone length 30 cm,
+second bone bent 90° up, all weights 1, λ = 1:
 
-The differentiator is not raw speed per iteration (CCD and FABRIK are also
-O(N)); it's that DLS is the only one of the iterative options whose behavior is
-*analyzable and guaranteed*: gain bounded by $1/2\lambda$, unique convex step,
-weights with exact semantics. When a TD asks "why did the arm do that?", DLS has
-an answer; CCD has a shrug.
+```
+joint0 at p₀ = (0, 0, 0)
+joint1 at p₁ = (30, 0, 0)
+effector pₑ = (30, 30, 0)          (tip joint origin)
+target   t  = (45, 15, 0)
 
-### Use cases where this solver is the right tool
+                y
+                ↑    pₑ(30,30)
+                │     ●
+                │     ┃ bone2        × t(45,15)
+                │     ┃
+                ●━━━━━●───────→ x
+              p₀      p₁(30,0)
+```
 
-- **Foot/hand placement with near-full extension** — planted leg on terrain,
-  reaching grabs: the singularity case, DLS's home turf.
-- **Long chains**: spines, tails, tentacles, cables, plant stems — where CCD
-  curls and FABRIK rolls.
-- **Look-at distributed over spine+neck+head** with per-joint weights (spine
-  20%, neck 50%, head 100%) — §9 gives exact semantics.
-- **Mech/robot arms** — DLS is literally the robotics-industry standard for
-  these mechanisms.
-- **Weapon/prop two-hand constraints** on top of animation, where stability
-  under noisy animated targets matters more than exactness.
+**Step 1 — error:**  `e = t − pₑ = (15, −15, 0)`, ‖e‖ ≈ 21.2 cm (no clamp needed).
 
-When **not** to use it: 2-bone limbs with good pole-vector art direction (Two
-Bone IK is exact and cheaper — use it); full-body multi-effector posing (PBIK's
-problem domain); crowds at extreme scale where even 3 iterations is too much
-(precompute or use analytic).
+**Step 2 — lever arms:**
+
+```
+r₀ = pₑ − p₀ = (30, 30, 0)      ‖r₀‖² = 1800
+r₁ = pₑ − p₁ = (0, 30, 0)       ‖r₁‖² =  900
+```
+
+**Step 3 — build M** (each term is ‖r‖²I − rrᵀ):
+
+```
+joint0 term:  ⎡ 1800−900   −900      0 ⎤   ⎡  900  −900     0 ⎤
+              ⎢  −900    1800−900    0 ⎥ = ⎢ −900   900     0 ⎥
+              ⎣    0        0     1800 ⎦   ⎣    0     0  1800 ⎦
+
+joint1 term:  ⎡ 900   0    0 ⎤      note the 0 in the (y,y) slot: ‖r₁‖² − r₁ᵧ² = 900−900.
+              ⎢   0   0    0 ⎥      r₁ points straight up, so rotating joint1 moves the
+              ⎣   0   0  900 ⎦      effector only sideways — zero mobility along y. ✓
+
+M = ⎡ 1800  −900     0 ⎤
+    ⎢ −900   900     0 ⎥
+    ⎣    0     0  2700 ⎦
+```
+
+Sanity read of M itself: the (y,y) entry 900 < the (x,x) entry 1800 — the arm moves the
+effector in x more easily than in y from this pose. The matrix *knows* the mechanism.
+
+**Step 4 — isotropy:** det(M) = (1800·900 − 900²)·2700 = 810000·2700 ≈ 2.19e9;
+(trace/3)³ = (5400/3)³ = 1800³ ≈ 5.83e9 → isotropy ≈ **0.375**. Above τ = 0.1 →
+healthy pose, no extra damping. λ = 1, λ² = 1.
+
+**Step 5 — solve (M + I)·y = e.** z stays 0 (no z error); the 2×2 block:
+
+```
+⎡ 1801  −900 ⎤ ⎡y_x⎤   ⎡ 15⎤          y_x ≈  0.0000185
+⎣ −900   901 ⎦ ⎣y_y⎦ = ⎣−15⎦    ⇒     y_y ≈ −0.0166
+```
+
+(Check row 2: −900·0.0000185 + 901·(−0.0166) ≈ −15 ✓)
+
+**Step 6 — per-joint rotation vectors** ωᵢ = rᵢ × y:
+
+```
+ω₀ = (30,30,0) × (0.0000185, −0.0166, 0) = (0, 0, −0.499)   ≈ −28.6° about z
+ω₁ = ( 0,30,0) × (0.0000185, −0.0166, 0) = (0, 0, −0.00055) ≈ −0.03° about z
+```
+
+Read what the solver decided: rotate the *shoulder* clockwise by ~28.6° and barely touch
+the elbow — the shoulder's lever arm is longer, so least-squares routes the motion there
+(§3.2 "long lever arms dominate"). The 10° `MaxAngleStep` clamp would actually cap ω₀ this
+iteration and let convergence take ~3 iterations — by design.
+
+**Step 7 — verify against the linear model.** The model predicts the effector moves by
+Σ ωᵢ × rᵢ:
+
+```
+ω₀ × r₀ = (0,0,−0.499) × (30,30,0) = (14.98, −14.98, 0)
+ω₁ × r₁ = (0,0,−0.00055) × (0,30,0) = ( 0.017,   0,    0)
+predicted move ≈ (15.0, −15.0, 0) = e   ✓
+```
+
+The linear model says we land exactly on the target; the true rotation (nonlinear) will
+land *close*, and iteration 2 cleans up the residue. That gap between the linear
+prediction and the curved reality is precisely why IK iterates — and why the error clamp
+of §3.10 exists.
+
+**Automated version of this review:** every claim above is enforced by a test —
+`FiniteDifferenceJacobian` (step 6's columns match numerical FK probing),
+`ReachableTargetConverges` (the iteration finishes the job),
+`DampingBoundsSingularStep` (§3.5/3.6's boundedness). Map in [TESTING.md](TESTING.md).
 
 ---
 
-## 12. References
+## References
 
-- S. Buss, *Introduction to Inverse Kinematics with Jacobian Transpose,
-  Pseudoinverse and Damped Least Squares Methods*, 2004 — the canonical tutorial;
-  this module is closest to its DLS-with-clamping recommendation.
-- C. Wampler, *Manipulator Inverse Kinematic Solutions Based on Vector
-  Formulations and Damped Least-Squares Methods*, IEEE SMC, 1986.
-- Y. Nakamura, H. Hanafusa, *Inverse Kinematic Solutions With Singularity
-  Robustness for Robot Manipulator Control*, ASME JDSMC, 1986 — adaptive damping.
-- S. Buss, J.-S. Kim, *Selectively Damped Least Squares for Inverse Kinematics*,
-  JGT, 2005 — per-direction damping (the natural next step; DESIGN.md §7).
-- A. Aristidou, J. Lasenby et al., *Inverse Kinematics Techniques in Computer
-  Graphics: A Survey*, CGF, 2018 — the field map (FABRIK authors, fair to all sides).
+- S. Buss — *Introduction to Inverse Kinematics with Jacobian Transpose, Pseudoinverse
+  and Damped Least Squares Methods* (2004). The canonical tutorial; this module is
+  closest to its DLS-with-clamping recommendation.
+- C. Wampler — *Manipulator Inverse Kinematic Solutions Based on Vector Formulations and
+  Damped Least-Squares Methods*, IEEE SMC (1986).
+- Y. Nakamura, H. Hanafusa — *Inverse Kinematic Solutions With Singularity Robustness for
+  Robot Manipulator Control*, ASME JDSMC (1986). Adaptive damping.
+- S. Buss, J.-S. Kim — *Selectively Damped Least Squares for Inverse Kinematics*, JGT
+  (2005). Per-direction damping — the natural next step (DESIGN.md §7).
+- A. Aristidou, J. Lasenby et al. — *Inverse Kinematics Techniques in Computer Graphics:
+  A Survey*, CGF (2018). The field map, written by FABRIK's authors and fair to all sides.

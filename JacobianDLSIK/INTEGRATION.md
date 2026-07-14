@@ -56,7 +56,7 @@ Engine-version call sites to check if you're off 5.3–5.6:
 5. Blend with the node's built-in **Alpha** pin — standard skeletal-control
    alpha semantics.
 
-The tip bone's *rotation* is intentionally untouched (THEORY.md §3). For a
+The tip bone's *rotation* is intentionally untouched (THEORY.md §3.2). For a
 specific hand orientation, follow the node with a Transform (Modify) Bone or a
 Look At on the tip.
 
@@ -81,7 +81,7 @@ One entry per bone you want to deviate from `Weight = 1, no limits`:
 | wrong joints doing the work | `JointSettings` weights | shift weight toward the joints you want |
 
 Defaults are sized for a ~60 cm humanoid arm in cm units. For a tail or crane,
-scale `Damping` and `MaxErrorStep` proportionally to chain length (THEORY.md §6
+scale `Damping` and `MaxErrorStep` proportionally to chain length (THEORY.md §3.6
 "Units and tuning").
 
 ## 4. Debugging

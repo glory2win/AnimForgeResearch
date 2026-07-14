@@ -10,7 +10,7 @@
 //    and limits are reprojection hacks.
 //  - This node: one least-squares problem over all joints per iteration, exact
 //    per-joint weighting, and bounded response at singular poses (straight-arm
-//    reach, planted leg) via damping. See THEORY.md sections 5 and 10.
+//    reach, planted leg) via damping. See THEORY.md sections 3.5 and 3.10.
 
 #pragma once
 

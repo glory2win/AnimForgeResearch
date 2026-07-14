@@ -20,7 +20,8 @@ with adaptive damping that engages only near singularities.
 
 | file | contents |
 |---|---|
-| [THEORY.md](THEORY.md) | **read first** — the full math from first principles: FK→IK, what the Jacobian is, geometric columns, pseudoinverse, SVD, what singularities physically are, the DLS derivation, the O(N) identity, adaptive damping, weighting, UE-solver comparison, use cases, references |
+| [THEORY.md](THEORY.md) | **read first** — the full math from first principles, structured as our pipeline: 1 Concept Overview → 2 Data Flow → 3 Algorithm (Jacobian, SVD, singularities, DLS derivation, O(N) identity, damping, weights, limits) → 4 Pseudocode → 5 C++ map → 6 Review (a one-iteration numeric trace you can check by hand) |
+| [JacobianDLSIK_Slides.pptx](JacobianDLSIK_Slides.pptx) | presentation version of the theory — the whole story in ~15 slides with the diagrams |
 | [DESIGN.md](DESIGN.md) | architecture, solve-loop flowchart, decisions defended (JJᵀ form, Cholesky, linearization-point discipline), threading/memory, perf profile, edge cases, extensions (6-DOF, multi-effector, SDLS, nullspace) |
 | [INTEGRATION.md](INTEGRATION.md) | Build.cs, file placement, AnimBP wiring, tuning cheat sheet, debug CVar, running the tests |
 | [TESTING.md](TESTING.md) | test plan: what each automated test proves (mapped to THEORY.md sections), manual singularity-torture and slope-walk scenarios, honest perf-comparison methodology |
@@ -28,7 +29,7 @@ with adaptive damping that engages only near singularities.
 | [AnimNode_JacobianDLSIK.h](AnimNode_JacobianDLSIK.h) / [.cpp](AnimNode_JacobianDLSIK.cpp) | skeletal control node (runtime module): chain caching, space conversion, per-bone settings, debug draw |
 | [AnimGraphNode_JacobianDLSIK.h](AnimGraphNode_JacobianDLSIK.h) / [.cpp](AnimGraphNode_JacobianDLSIK.cpp) | AnimGraph palette node (editor module) |
 | [Tests/JacobianDLSSolverTests.cpp](Tests/JacobianDLSSolverTests.cpp) | 8 automation tests: finite-difference Jacobian check, convergence, **damping-bounds-singular-step**, unreachable stability, limits, locking, determinism, perf |
-| [Diagrams/](Diagrams) | [jacobian_geometry](Diagrams/jacobian_geometry.svg) · [dls_gain_curve](Diagrams/dls_gain_curve.svg) · [singularity](Diagrams/singularity.svg) |
+| [Diagrams/](Diagrams) | [fk_vs_ik](Diagrams/fk_vs_ik.svg) · [jacobian_geometry](Diagrams/jacobian_geometry.svg) · [singularity](Diagrams/singularity.svg) · [dls_gain_curve](Diagrams/dls_gain_curve.svg) · [solve_loop](Diagrams/solve_loop.svg) |
 
 ## Quick start
 
@@ -44,15 +45,14 @@ with adaptive damping that engages only near singularities.
 
 ## The one-line math summary
 
-$$\Delta\theta = J^T\!\left(JJ^T + \lambda^2 I\right)^{-1}\mathbf{e}
-\quad\text{with}\quad
-JJ^T = \sum_i w_i\big(\|\mathbf{r}_i\|^2 I - \mathbf{r}_i\mathbf{r}_i^T\big),
-\quad
-\Delta\theta_i = w_i\,(\mathbf{r}_i \times \mathbf{y})$$
+```
+Δθ = Jᵀ·(J·Jᵀ + λ²I)⁻¹·e         with   J·Jᵀ = Σᵢ wᵢ·(‖rᵢ‖²I − rᵢrᵢᵀ)
+                                  and    ωᵢ  = wᵢ·(rᵢ × y)   per-joint update
+```
 
 Per-direction gain σ/(σ²+λ²) instead of 1/σ: identical to the pseudoinverse far
 from singularities, smoothly bounded at them. The two identities on the right
 are why the whole thing runs in O(N) with one 3×3 Cholesky — derived in
-THEORY.md §6–7.
+THEORY.md §3.6–3.7.
 
 Targets UE 5.3–5.6, stock engine modules only.

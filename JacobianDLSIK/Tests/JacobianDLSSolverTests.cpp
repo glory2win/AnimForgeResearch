@@ -125,7 +125,7 @@ bool FJacobianDLSIK_ReachableTargetConverges::RunTest(const FString& Parameters)
 // 3. THE DLS claim: near a singular pose (almost-straight chain, target back
 //    along the chain axis), an (effectively) undamped pseudoinverse step is huge
 //    — the 1/sigma blow-up — while the damped step stays bounded. This is the
-//    reason this solver exists; see THEORY.md sections 5-6.
+//    reason this solver exists; see THEORY.md sections 3.5-3.6.
 // ---------------------------------------------------------------------------
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FJacobianDLSIK_DampingBoundsSingularStep,
 	"AnimForge.JacobianDLSIK.DampingBoundsSingularStep",

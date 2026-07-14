@@ -66,6 +66,6 @@
   <text x="475" y="292" font-size="13.5" fill="#2f855a" font-weight="bold">DLS:  &#916;&#952; &#8804; e / 2&#955;  &#8212;  bounded, by construction</text>
   <text x="475" y="310" font-size="13" fill="#2f855a">eases toward full extension, trades a little accuracy for stability</text>
 
-  <text x="60" y="352" font-size="13.5" fill="#4a5568">This pose is not exotic: it is every planted straight leg and every full-reach grab. Proven by the DampingBoundsSingularStep automation test:</text>
-  <text x="60" y="370" font-size="13.5" fill="#4a5568">same pose, same target &#8212; undamped max joint step &#62; 1 rad, damped &#60; 0.35 rad with all safety clamps disabled.</text>
+  <text x="60" y="352" font-size="13.5" fill="#4a5568">This pose is not exotic: it is every planted straight leg and full-reach grab. Proven by the DampingBoundsSingularStep test:</text>
+  <text x="60" y="370" font-size="13.5" fill="#4a5568">undamped max joint step &#62; 1 rad, damped &#60; 0.35 rad &#8212; same pose, same target, all safety clamps disabled.</text>
 </svg>

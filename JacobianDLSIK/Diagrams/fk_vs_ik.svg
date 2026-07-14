@@ -1,0 +1,66 @@
+<svg viewBox="0 0 860 400" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="fkArrow" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L9,4 L0,8 z" fill="#2f855a"/>
+    </marker>
+    <marker id="ikArrow" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L9,4 L0,8 z" fill="#c53030"/>
+    </marker>
+  </defs>
+  <rect width="860" height="400" fill="#ffffff"/>
+  <text x="430" y="30" text-anchor="middle" font-size="17" font-weight="bold" fill="#1a202c">Forward Kinematics (easy) vs Inverse Kinematics (hard)</text>
+
+  <!-- ===== LEFT: FK ===== -->
+  <rect x="30" y="55" width="390" height="310" rx="10" fill="#f0fff4" stroke="#2f855a" stroke-width="1.5"/>
+  <text x="225" y="83" text-anchor="middle" font-size="15" font-weight="bold" fill="#2f855a">FK:  angles &#8594; position</text>
+  <text x="225" y="103" text-anchor="middle" font-size="13" fill="#4a5568">p&#8337; = f(&#952;)&#8201;&#8212;&#8201;walk the chain, multiply transforms</text>
+
+  <!-- input angles box -->
+  <rect x="55" y="130" width="120" height="70" rx="8" fill="#ffffff" stroke="#2f855a" stroke-width="1.5"/>
+  <text x="115" y="158" text-anchor="middle" font-size="13.5" fill="#2d3748">&#952;&#8321; = 40&#176;</text>
+  <text x="115" y="178" text-anchor="middle" font-size="13.5" fill="#2d3748">&#952;&#8322; = &#8722;60&#176;</text>
+  <line x1="180" y1="165" x2="225" y2="165" stroke="#2f855a" stroke-width="2.5" marker-end="url(#fkArrow)"/>
+
+  <!-- one resulting arm -->
+  <line x1="255" y1="230" x2="320" y2="175" stroke="#2d3748" stroke-width="6" stroke-linecap="round"/>
+  <line x1="320" y1="175" x2="395" y2="185" stroke="#2d3748" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="255" cy="230" r="8" fill="#e2e8f0" stroke="#2d3748" stroke-width="2.5"/>
+  <circle cx="320" cy="175" r="8" fill="#e2e8f0" stroke="#2d3748" stroke-width="2.5"/>
+  <circle cx="395" cy="185" r="6.5" fill="#2f855a"/>
+  <text x="352" y="215" font-size="12.5" fill="#2f855a" font-weight="bold">one answer</text>
+
+  <text x="55" y="290" font-size="13" fill="#4a5568">&#8226; always exists, always unique</text>
+  <text x="55" y="312" font-size="13" fill="#4a5568">&#8226; smooth, cheap, closed form</text>
+  <text x="55" y="334" font-size="13" fill="#4a5568">&#8226; this is the function we can evaluate</text>
+
+  <!-- ===== RIGHT: IK ===== -->
+  <rect x="440" y="55" width="390" height="310" rx="10" fill="#fff5f5" stroke="#c53030" stroke-width="1.5"/>
+  <text x="635" y="83" text-anchor="middle" font-size="15" font-weight="bold" fill="#c53030">IK:  position &#8594; angles</text>
+  <text x="635" y="103" text-anchor="middle" font-size="13" fill="#4a5568">find &#952; so that f(&#952;) = target&#8201;&#8212;&#8201;invert a nonlinear function</text>
+
+  <!-- target -->
+  <circle cx="500" cy="170" r="8" fill="none" stroke="#c53030" stroke-width="3"/>
+  <circle cx="500" cy="170" r="2.5" fill="#c53030"/>
+  <text x="497" y="149" text-anchor="middle" font-size="13" fill="#c53030" font-weight="bold">target</text>
+  <line x1="516" y1="176" x2="560" y2="196" stroke="#c53030" stroke-width="2.5" marker-end="url(#ikArrow)"/>
+
+  <!-- multiple solutions: elbow up & elbow down -->
+  <g opacity="0.9">
+    <line x1="600" y1="290" x2="650" y2="215" stroke="#2d3748" stroke-width="6" stroke-linecap="round"/>
+    <line x1="650" y1="215" x2="720" y2="185" stroke="#2d3748" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <g opacity="0.38">
+    <line x1="600" y1="290" x2="685" y2="278" stroke="#2d3748" stroke-width="6" stroke-linecap="round"/>
+    <line x1="685" y1="278" x2="720" y2="185" stroke="#2d3748" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <circle cx="600" cy="290" r="8" fill="#e2e8f0" stroke="#2d3748" stroke-width="2.5"/>
+  <circle cx="720" cy="185" r="6.5" fill="#c53030"/>
+  <text x="742" y="238" font-size="12.5" fill="#c53030" font-weight="bold">two answers</text>
+  <text x="742" y="254" font-size="12.5" fill="#c53030">(elbow up/down)</text>
+  <text x="742" y="270" font-size="12.5" fill="#c53030">&#8230;or infinite,</text>
+  <text x="742" y="286" font-size="12.5" fill="#c53030">or none</text>
+
+  <text x="465" y="312" font-size="13" fill="#4a5568">&#8226; nonlinear (sin/cos of angles) &#8212; no general closed form</text>
+  <text x="465" y="334" font-size="13" fill="#4a5568">&#8226; many / no solutions; answer must match last frame's pose</text>
+  <text x="465" y="356" font-size="13" fill="#4a5568">&#8226; so we solve it iteratively &#8212; using the Jacobian</text>
+</svg>

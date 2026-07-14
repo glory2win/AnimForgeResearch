@@ -5,8 +5,7 @@
   <!-- axes -->
   <line x1="80" y1="360" x2="700" y2="360" stroke="#2d3748" stroke-width="2"/>
   <line x1="80" y1="360" x2="80" y2="50" stroke="#2d3748" stroke-width="2"/>
-  <text x="700" y="385" text-anchor="end" font-size="14" fill="#2d3748" font-style="italic">&#963;  (how easily the effector moves in this direction)</text>
-  <text x="30" y="55" font-size="14" fill="#2d3748" font-style="italic">gain</text>
+  <text x="66" y="60" text-anchor="end" font-size="14" fill="#2d3748" font-style="italic">gain</text>
 
   <!-- x ticks: sigma = lambda at x=230, 2 at 380, 3 at 530, 4 at 680 -->
   <g stroke="#2d3748" stroke-width="1.5">
@@ -17,6 +16,7 @@
   <text x="380" y="382" text-anchor="middle" font-size="13" fill="#2d3748">2&#955;</text>
   <text x="530" y="382" text-anchor="middle" font-size="13" fill="#2d3748">3&#955;</text>
   <text x="680" y="382" text-anchor="middle" font-size="13" fill="#2d3748">4&#955;</text>
+  <text x="700" y="402" text-anchor="end" font-size="13" fill="#2d3748" font-style="italic">&#963; &#8212; how easily the effector moves in this direction</text>
 
   <!-- y tick at gain 0.5 = 1/(2 lambda), y=305 -->
   <line x1="74" y1="305" x2="80" y2="305" stroke="#2d3748" stroke-width="1.5"/>
@@ -29,19 +29,20 @@
 
   <!-- pseudoinverse curve 1/sigma -->
   <path d="M 122 37 L 131 60 L 140 85 L 155 140 L 180 195 L 205 227 L 230 250 L 268 273 L 305 287 L 380 305 L 455 316 L 530 323 L 605 328 L 680 332" fill="none" stroke="#c53030" stroke-width="3"/>
-  <text x="150" y="52" font-size="15" fill="#c53030" font-weight="bold">1/&#963;  (pseudoinverse: explodes &#8594; jitter, snapping)</text>
+  <text x="310" y="120" font-size="15" fill="#c53030" font-weight="bold">1/&#963; &#8212; pseudoinverse: explodes &#8594; jitter, snapping</text>
 
   <!-- DLS curve sigma/(sigma^2+lambda^2) -->
   <path d="M 80 360 L 98 351 L 117 334 L 136 325 L 155 316 L 174 310 L 192 307 L 211 305.5 L 230 305 L 268 306.5 L 305 309 L 342 312.5 L 380 316 L 455 322 L 530 327 L 605 331 L 680 334" fill="none" stroke="#2b6cb0" stroke-width="3.5"/>
-  <text x="330" y="345" font-size="15" fill="#2b6cb0" font-weight="bold">&#963;/(&#963;&#178;+&#955;&#178;)  (DLS: bounded everywhere)</text>
+  <text x="330" y="348" font-size="15" fill="#2b6cb0" font-weight="bold">&#963;/(&#963;&#178;+&#955;&#178;) &#8212; DLS: bounded everywhere</text>
 
   <!-- peak marker -->
   <circle cx="230" cy="305" r="5" fill="#2b6cb0"/>
   <line x1="230" y1="305" x2="230" y2="360" stroke="#2b6cb0" stroke-width="1.2" stroke-dasharray="4 4"/>
   <line x1="80" y1="305" x2="230" y2="305" stroke="#2b6cb0" stroke-width="1.2" stroke-dasharray="4 4"/>
-  <text x="242" y="296" font-size="13" fill="#2b6cb0">max gain = 1/(2&#955;), at &#963; = &#955;</text>
+  <text x="90" y="283" font-size="12.5" fill="#2b6cb0" font-weight="bold">max gain = 1/(2&#955;)</text>
+  <text x="90" y="299" font-size="12.5" fill="#2b6cb0" font-weight="bold">at &#963; = &#955;</text>
 
   <!-- annotations -->
-  <text x="80" y="412" font-size="13.5" fill="#4a5568">As &#963; &#8594; 0 the pseudoinverse demands infinite joint motion; DLS smoothly gives up on impossible directions instead.</text>
-  <text x="80" y="430" font-size="13.5" fill="#4a5568">For &#963; &#8811; &#955; the two curves coincide: far from singularities, DLS *is* the minimum-norm least-squares solution.</text>
+  <text x="80" y="422" font-size="12.5" fill="#4a5568">As &#963; &#8594; 0 the pseudoinverse demands infinite joint motion; DLS smoothly gives up instead.</text>
+  <text x="80" y="438" font-size="12.5" fill="#4a5568">For &#963; &#8811; &#955; the curves coincide: far from singularities, DLS is the minimum-norm least-squares solution.</text>
 </svg>
