@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1584 396" font-family="Chakra Petch">
+  <!-- AnimForge Systems — brand banner (LinkedIn cover proportions 1584×396) -->
+  <defs>
+    <linearGradient id="bgFade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0"   stop-color="#14181D"/>
+      <stop offset="0.72" stop-color="#14181D"/>
+      <stop offset="1"   stop-color="#1B2129"/>
+    </linearGradient>
+    <radialGradient id="spark" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"   stop-color="#F2762E" stop-opacity="0.55"/>
+      <stop offset="1"   stop-color="#F2762E" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- background -->
+  <rect width="1584" height="396" fill="url(#bgFade)"/>
+
+  <!-- viewport grid -->
+  <g stroke="#2A323C" stroke-width="1" opacity="0.55">
+    <path d="M0 66 H1584 M0 132 H1584 M0 198 H1584 M0 264 H1584 M0 330 H1584"/>
+    <path d="M132 0 V396 M264 0 V396 M396 0 V396 M528 0 V396 M660 0 V396 M792 0 V396
+             M924 0 V396 M1056 0 V396 M1188 0 V396 M1320 0 V396 M1452 0 V396"/>
+  </g>
+
+  <!-- ============ wordmark ============ -->
+  <g>
+    <text x="96" y="192" font-size="118" font-weight="700" fill="#E8EDF2"
+          letter-spacing="2">Anim<tspan fill="#F2762E">Forge</tspan></text>
+    <!-- baseline rule with XYZ gizmo tick -->
+    <g>
+      <rect x="100" y="222" width="26" height="9" fill="#E5484D"/>
+      <rect x="132" y="222" width="26" height="9" fill="#46A758"/>
+      <rect x="164" y="222" width="26" height="9" fill="#3E8FF7"/>
+      <rect x="202" y="225.5" width="560" height="2" fill="#2A323C"/>
+    </g>
+    <text x="100" y="286" font-size="52" font-weight="600" fill="#5FD4E8"
+          letter-spacing="26">SYSTEMS</text>
+    <text x="100" y="340" font-size="22" font-family="IBM Plex Mono" font-weight="500"
+          fill="#8B98A5" letter-spacing="3">RUNTIME ANIMATION TOOLS, FORGED FOR PRODUCTION</text>
+  </g>
+
+  <!-- ============ running joint-chain figure ============ -->
+  <g transform="translate(1130 30) scale(1.32)">
+    <!-- trajectory trail sweeping in from the left -->
+    <path d="M-190 176 C -120 136, -50 158, 30 176 C 60 183, 80 190, 100 206"
+          fill="none" stroke="#5FD4E8" stroke-width="4.5"
+          stroke-linecap="round" stroke-dasharray="1 15" opacity="0.7"/>
+
+    <!-- ground glow + spark -->
+    <ellipse cx="100" cy="214" rx="70" ry="12" fill="url(#spark)"/>
+
+    <!-- bones -->
+    <g stroke="#5FD4E8" stroke-width="9" stroke-linecap="round" fill="none">
+      <path d="M124 138 L138 106 L146 84"/>
+      <path d="M140 102 L114 116 L92 104"/>
+      <path d="M140 102 L166 112 L192 100"/>
+      <path d="M124 138 L96 168 L100 206"/>
+      <path d="M124 138 L156 166 L184 194"/>
+    </g>
+
+    <!-- joints -->
+    <g fill="#14181D" stroke="#5FD4E8" stroke-width="5">
+      <circle cx="124" cy="138" r="9"/>
+      <circle cx="138" cy="106" r="8"/>
+      <circle cx="114" cy="116" r="6"/>
+      <circle cx="166" cy="112" r="6"/>
+      <circle cx="96"  cy="168" r="6"/>
+      <circle cx="156" cy="166" r="6"/>
+    </g>
+
+    <!-- head -->
+    <circle cx="152" cy="64" r="16" fill="#14181D" stroke="#5FD4E8" stroke-width="6"/>
+
+    <!-- end effectors -->
+    <g fill="#F2762E">
+      <circle cx="92"  cy="104" r="8"/>
+      <circle cx="192" cy="100" r="8"/>
+      <circle cx="100" cy="206" r="8"/>
+      <circle cx="184" cy="194" r="8"/>
+    </g>
+
+    <!-- forge spark at planted foot -->
+    <path d="M100 206 l-15 -5 M100 206 l15 -5 M100 206 l0 -16"
+          stroke="#F2762E" stroke-width="3.5" stroke-linecap="round"/>
+  </g>
+</svg>

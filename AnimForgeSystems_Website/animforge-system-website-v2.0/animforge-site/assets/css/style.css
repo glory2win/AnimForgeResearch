@@ -482,3 +482,6 @@ p { margin: 0 0 1em; }
   html { scroll-behavior: auto; }
   .card, .card:hover { transition: none; transform: none; }
 }
+
+/* brand mark in nav */
+.brand .mark { display: block; border-radius: 50%; }

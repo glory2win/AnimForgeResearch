@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- AnimForge Systems — round mark
+       Running joint-chain figure: bones in spline cyan, end effectors in ember.
+       Same visual language as the live IK hero on the website. -->
+  <defs>
+    <clipPath id="disc"><circle cx="128" cy="128" r="128"/></clipPath>
+  </defs>
+
+  <g clip-path="url(#disc)">
+    <!-- viewport background -->
+    <circle cx="128" cy="128" r="128" fill="#14181D"/>
+
+    <!-- faint viewport grid -->
+    <g stroke="#2A323C" stroke-width="1.5" opacity="0.5">
+      <path d="M0 64 H256 M0 128 H256 M0 192 H256"/>
+      <path d="M64 0 V256 M128 0 V256 M192 0 V256"/>
+    </g>
+
+    <!-- motion trail behind the figure (end-effector trajectory) -->
+    <path d="M22 176 C 52 150, 74 158, 96 176" fill="none"
+          stroke="#5FD4E8" stroke-width="5" stroke-linecap="round"
+          stroke-dasharray="1 16" opacity="0.75"/>
+
+    <!-- ground spark under planted foot -->
+    <ellipse cx="100" cy="211" rx="26" ry="5" fill="#F2762E" opacity="0.35"/>
+
+    <!-- ============ figure: bones ============ -->
+    <g stroke="#5FD4E8" stroke-width="9" stroke-linecap="round" fill="none">
+      <!-- spine: pelvis -> chest -> neck -->
+      <path d="M124 138 L138 106 L146 84"/>
+      <!-- back arm: chest -> elbow -> hand -->
+      <path d="M140 102 L114 116 L92 104"/>
+      <!-- front arm: chest -> elbow -> hand -->
+      <path d="M140 102 L166 112 L192 100"/>
+      <!-- back leg: pelvis -> knee -> foot (trailing, toe-off) -->
+      <path d="M124 138 L96 168 L100 206"/>
+      <!-- front leg: pelvis -> knee -> foot (reaching) -->
+      <path d="M124 138 L156 166 L184 194"/>
+    </g>
+
+    <!-- ============ figure: joints ============ -->
+    <g fill="#14181D" stroke="#5FD4E8" stroke-width="5">
+      <circle cx="124" cy="138" r="9"/>  <!-- pelvis -->
+      <circle cx="138" cy="106" r="8"/>  <!-- chest -->
+      <circle cx="114" cy="116" r="6"/>  <!-- back elbow -->
+      <circle cx="166" cy="112" r="6"/>  <!-- front elbow -->
+      <circle cx="96"  cy="168" r="6"/>  <!-- back knee -->
+      <circle cx="156" cy="166" r="6"/>  <!-- front knee -->
+    </g>
+
+    <!-- head -->
+    <circle cx="152" cy="64" r="16" fill="#14181D" stroke="#5FD4E8" stroke-width="6"/>
+
+    <!-- end effectors in ember (hands + feet) -->
+    <g fill="#F2762E">
+      <circle cx="92"  cy="104" r="8"/>
+      <circle cx="192" cy="100" r="8"/>
+      <circle cx="100" cy="206" r="8"/>
+      <circle cx="184" cy="194" r="8"/>
+    </g>
+
+    <!-- forge spark at planted foot -->
+    <path d="M100 206 l-14 -4 M100 206 l14 -4 M100 206 l0 -14"
+          stroke="#F2762E" stroke-width="3" stroke-linecap="round" opacity="0.9"/>
+  </g>
+
+  <!-- ember ring -->
+  <circle cx="128" cy="128" r="122" fill="none" stroke="#F2762E" stroke-width="7"/>
+</svg>

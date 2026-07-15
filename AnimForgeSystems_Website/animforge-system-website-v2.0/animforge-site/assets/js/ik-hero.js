@@ -28,8 +28,13 @@
   const TRAIL_MAX = 90;
   const trail = [];
 
-  // target: cursor when inside hero, otherwise a slow Lissajous idle path
+  // target: cursor when inside hero, otherwise a slow Lissajous idle path.
+  // The solver never sees the raw target — it sees a smoothed one (see below),
+  // so pointer enter/leave and fast cursor moves can't snap the chain.
   let mouseX = null, mouseY = null;
+  let smoothX = null, smoothY = null;   // low-pass filtered target
+  const SMOOTHING = 0.12;               // per-frame lerp factor toward raw target
+  const MAX_DTHETA = 0.09;              // per-joint, per-frame angular velocity clamp (rad)
   let t = 0;
 
   const css = getComputedStyle(document.documentElement);
@@ -166,16 +171,36 @@
     ctx.stroke();
   }
 
-  function targetPos() {
+  function rawTargetPos() {
     if (mouseX !== null) return [mouseX, mouseY];
     // idle Lissajous path around the chain's workspace
-    const w = canvas.parentElement.clientWidth;
-    const h = canvas.parentElement.clientHeight;
     const cx = rootX, cy = rootY - boneLen * 2.6;
     return [
       cx + Math.sin(t * 0.55) * boneLen * 2.4,
       cy + Math.sin(t * 0.83 + 1.2) * boneLen * 1.5,
     ];
+  }
+
+  // Clamp the target into the chain's comfortable workspace:
+  // an annulus [minReach, maxReach] around the root. Targets near the root
+  // force folded near-singular configurations; targets past full extension
+  // make the solve oscillate against the reach boundary.
+  function clampToWorkspace(x, y) {
+    const minReach = boneLen * 1.6;
+    const maxReach = boneLen * (NUM_BONES - 0.35);
+    let dx = x - rootX, dy = y - rootY;
+    let d = Math.hypot(dx, dy);
+    if (d < 1e-6) { dx = 0; dy = -1; d = 1; }
+    const r = Math.min(Math.max(d, minReach), maxReach);
+    return [rootX + (dx / d) * r, rootY + (dy / d) * r];
+  }
+
+  function targetPos() {
+    const [rx, ry] = clampToWorkspace(...rawTargetPos());
+    if (smoothX === null) { smoothX = rx; smoothY = ry; }
+    smoothX += (rx - smoothX) * SMOOTHING;
+    smoothY += (ry - smoothY) * SMOOTHING;
+    return [smoothX, smoothY];
   }
 
   function frame() {
@@ -184,7 +209,14 @@
     const h = canvas.parentElement.clientHeight;
     const [tx, ty] = targetPos();
 
+    // solve, then clamp each joint's total per-frame delta (angular velocity limit)
+    const prev = theta.slice();
     for (let i = 0; i < ITERATIONS; i++) dlsStep(tx, ty);
+    for (let i = 0; i < NUM_BONES; i++) {
+      const d = theta[i] - prev[i];
+      if (d >  MAX_DTHETA) theta[i] = prev[i] + MAX_DTHETA;
+      if (d < -MAX_DTHETA) theta[i] = prev[i] - MAX_DTHETA;
+    }
 
     const pts = fk(theta);
     trail.push(pts[NUM_BONES]);
