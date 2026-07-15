@@ -52,7 +52,7 @@ Two-bone chains have an exact closed form (law of cosines — that is literally 
 | **Two Bone IK** | analytic | …the chain has more than 2 bones. Ever. |
 | **CCD** (`AnimNode_CCDIK`) | rotate one joint at a time, greedily | chain *curls tip-heavy* (last-serviced joints grab all the error), poses depend on sweep order, oscillates near the target |
 | **FABRIK** (`AnimNode_Fabrik`) | slide joint *positions*, derive rotations after | **twist is undefined** (forearm roll drifts), joint limits are reprojection hacks, stiffness is not principled |
-| **Full Body IK** (PBIK) | position-based dynamics | great for full-body multi-effector; heavy and empirically-tuned for a single chain |
+| **Full Body IK** (FBIK) | position-based dynamics | great for full-body multi-effector; heavy and empirically-tuned for a single chain |
 
 And **all** undamped iterative methods share one deeper flaw — the singularity problem:
 

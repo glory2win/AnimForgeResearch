@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AnimForge Systems — Real-Time Animation Systems R&D</title>
+  <meta name="description" content="Professional animation tooling for Unreal Engine and Maya: runtime IK solvers, ragdoll stability systems, RBF blend spaces, and motion warping visualization. Contract animation systems engineering.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <nav class="nav wrap" aria-label="Main">
+    <a class="brand" href="index.html"><span class="spark" aria-hidden="true"></span>Anim<em>Forge</em> Systems</a>
+    <button class="nav-toggle" aria-expanded="false" aria-controls="nav-links">MENU</button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="tools.html">Tools</a></li>
+      <li><a href="lab.html">Lab</a></li>
+      <li><a href="blog/index.html">Writing</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a class="nav-cta" href="about.html#contact">Hire me</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ============ HERO — live DLS IK solver ============ -->
+  <section class="hero" aria-label="Introduction">
+    <canvas id="ik-canvas" aria-hidden="true"></canvas>
+    <div class="wrap">
+      <div class="hero-inner">
+        <p class="eyebrow">Animation systems R&amp;D</p>
+        <h1>Runtime animation tools, <span class="accent">forged</span> for production.</h1>
+        <p class="hero-sub">
+          IK solvers, ragdoll stability, N&#8209;dimensional blend spaces, and Maya&#8596;Unreal
+          pipeline tooling — built in C++ against real engine internals, shipped as
+          drop&#8209;in components.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="tools.html">Explore the tools</a>
+          <a class="btn btn-ghost" href="about.html#contact">Contract work</a>
+        </div>
+      </div>
+    </div>
+    <p class="hero-caption">live: damped least-squares IK &middot; 6 bones &middot; &lambda; = 0.35 &middot; move your cursor</p>
+  </section>
+
+  <!-- ============ TOOLS OVERVIEW ============ -->
+  <section class="section" id="tools">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Tools</p>
+        <h2>Built where Unreal stops</h2>
+        <p class="muted">Each tool targets a specific gap in the stock animation toolset —
+        and each one ships with the engineering notes explaining how it works.</p>
+      </div>
+
+      <div class="card-grid">
+        <article class="card">
+          <span class="status status-shipping">Shipping</span>
+          <h3>DLS IK Solver Node</h3>
+          <p>A damped least-squares IK AnimNode with axis-angle Jacobian error computation.
+          Stable near singularities where CCD and FABRIK degrade, with per-chain damping control.</p>
+          <a class="card-link" href="tools.html#dls-ik">Technical notes →</a>
+        </article>
+
+        <article class="card">
+          <span class="status status-dev">In development</span>
+          <h3>RBF Blend Space</h3>
+          <p>N-dimensional blend spaces via radial basis function interpolation — past the
+          2D ceiling of Unreal's Delaunay-based blend space assets. Engine-portable core solver.</p>
+          <a class="card-link" href="tools.html#rbf">Technical notes →</a>
+        </article>
+
+        <article class="card">
+          <span class="status status-dev">In development</span>
+          <h3>Ragdoll Stability Stack</h3>
+          <p>Drop-in components for ragdoll lifecycle: state-machine driven blend in/out,
+          impulse-based contact detection, rolling-velocity settle detection, and per-joint drives.</p>
+          <a class="card-link" href="tools.html#ragdoll">Technical notes →</a>
+        </article>
+
+        <article class="card">
+          <span class="status status-rd">R&amp;D</span>
+          <h3>AnimForge WarpViz</h3>
+          <p>Bidirectional Motion Warping visualization between Maya and Unreal. Warp targets are
+          evaluated natively in-engine and returned to Maya as a transparent animation layer overlay.</p>
+          <a class="card-link" href="tools.html#warpviz">Technical notes →</a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LAB TEASER ============ -->
+  <section class="section" id="lab">
+    <div class="wrap">
+      <div class="feature-row">
+        <div>
+          <p class="eyebrow">The lab</p>
+          <h2>Prani — an animation engine built to answer questions</h2>
+          <p class="muted">
+            Prani is a lightweight, multithreaded, ECS-based animation engine built from scratch —
+            a research sandbox for iterating on IK, blending, and pose pipelines at compile times
+            Unreal can't match. Algorithms are validated here first, then shipped as engine plugins.
+          </p>
+          <a class="btn btn-ghost" href="lab.html">Inside the lab</a>
+        </div>
+        <ul class="spec-list">
+          <li><strong>ECS core</strong> — EnTT registry with deferred structural changes at sync points</li>
+          <li><strong>Task parallelism</strong> — Intel TBB <code>parallel_for</code> across pose evaluation</li>
+          <li><strong>Rendering</strong> — Raylib 6 with skeletal blending, composited into tooling UI</li>
+          <li><strong>Purpose-built</strong> — every subsystem exists to test an animation technique faster</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WRITING TEASER ============ -->
+  <section class="section" id="writing">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Writing</p>
+        <h2>Engineering notes, not marketing copy</h2>
+        <p class="muted">Deep dives into engine internals, solver math, and the architecture
+        decisions behind each tool.</p>
+      </div>
+      <ul class="post-list">
+        <li>
+          <a href="blog/pac-vs-physicsblendweight.html">PAC vs. PhysicsBlendWeight: two knobs that are not the same knob</a>
+          <p class="post-meta">UNREAL ENGINE · PHYSICS ANIMATION</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ CONTACT ============ -->
+  <section class="section" id="contact-teaser">
+    <div class="wrap">
+      <div class="contact-panel">
+        <div>
+          <p class="eyebrow">Contracts</p>
+          <h2>Need an animation systems engineer?</h2>
+          <p class="muted">Available for contract work on runtime animation systems,
+          physics animation, and DCC pipeline tooling — UE5 C++, Maya API, C#, Python.</p>
+        </div>
+        <div>
+          <a class="contact-line" href="mailto:contact@animforgesystems.com">contact@animforgesystems.com</a>
+          <a class="contact-line" href="https://www.linkedin.com/in/varma-dandu-29b3b931/" rel="me">LinkedIn — Varma Dandu</a>
+          <a class="contact-line" href="https://github.com/glory2win" rel="me">GitHub — glory2win</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer wrap">
+  <span>© 2026 AnimForge Systems · Espoo, Finland</span>
+  <span><a href="tools.html">Tools</a> · <a href="lab.html">Lab</a> · <a href="blog/index.html">Writing</a> · <a href="about.html">About</a></span>
+</footer>
+
+<script src="assets/js/site.js"></script>
+<script src="assets/js/ik-hero.js"></script>
+</body>
+</html>

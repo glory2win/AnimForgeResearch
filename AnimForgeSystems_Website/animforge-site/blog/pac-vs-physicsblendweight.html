@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAC vs. PhysicsBlendWeight — AnimForge Systems</title>
+  <meta name="description" content="Unreal's Physical Animation Component and PhysicsBlendWeight are constantly conflated. One acts inside the physics solve; the other is a post-solve visual blend. The difference decides how your ragdolls behave.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <nav class="nav wrap" aria-label="Main">
+    <a class="brand" href="../index.html"><span class="spark" aria-hidden="true"></span>Anim<em>Forge</em> Systems</a>
+    <button class="nav-toggle" aria-expanded="false" aria-controls="nav-links">MENU</button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="../tools.html">Tools</a></li>
+      <li><a href="../lab.html">Lab</a></li>
+      <li><a href="index.html" aria-current="page">Writing</a></li>
+      <li><a href="../about.html">About</a></li>
+      <li><a class="nav-cta" href="../about.html#contact">Hire me</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main>
+  <article class="article">
+    <p class="eyebrow">Unreal Engine · Physics animation</p>
+    <h1>PAC vs. PhysicsBlendWeight: two knobs that are not the same knob</h1>
+    <p class="post-meta">2026 · VARMA DANDU · applies to UE 5.x — verify against your engine version</p>
+
+    <p>
+      Ask a room of Unreal developers how to make a character "partially physical" and you'll
+      hear two answers used interchangeably: turn on the Physical Animation Component, or raise
+      <code>PhysicsBlendWeight</code>. They are treated as two spellings of the same feature.
+      They are not. One acts <em>inside</em> the physics solve; the other happens <em>after</em>
+      it — and which one you're actually using decides how your character behaves under contact.
+    </p>
+
+    <h2>PAC: forces inside the solve</h2>
+    <p>
+      The Physical Animation Component works by injecting spring-damper drives into the
+      simulation itself. For each driven body, PAC computes the error between the body's
+      simulated transform and its animation target, and applies corrective forces and torques
+      — orientation strength, position strength, velocity strength — while the solver is
+      running, substep by substep.
+    </p>
+    <p>
+      The consequence: the physics world <em>feels</em> the animation. A PAC-driven arm that
+      hits a doorframe pushes against it, transfers momentum to it, and gets deflected by it,
+      all within one consistent simulation. The pose you see is a genuinely physical pose —
+      the solver negotiated it against every contact and constraint in the scene.
+    </p>
+    <p>
+      A detail worth knowing: PAC's orientation error is computed in axis-angle space via the
+      rotation log-map. That's the same error formulation a damped least-squares IK solver
+      uses for its rotational Jacobian terms — which is why PAC drives and IK targets can be
+      made to cooperate predictably when you understand both as the same family of
+      error-minimizing controllers.
+    </p>
+
+    <h2>PhysicsBlendWeight: a lerp after the solve</h2>
+    <p>
+      <code>PhysicsBlendWeight</code> does something entirely different. After the simulation
+      has finished its step, the skeletal mesh component builds its final bone transforms by
+      linearly blending, per body, between the kinematic animation pose and the simulated pose.
+      At <code>0.0</code> you see pure animation, at <code>1.0</code> pure simulation, and at
+      <code>0.5</code> a straight visual interpolation of the two.
+    </p>
+    <p>
+      Nothing about this blend feeds back into the simulation. The physics bodies keep
+      simulating at their fully simulated state; the blend only changes what gets rendered
+      and what the skeleton reports to downstream systems. It is a post-solve visual lerp —
+      cheap, predictable, and completely non-physical.
+    </p>
+
+    <h2>Why the distinction bites</h2>
+    <p>
+      The failure modes follow directly from which side of the solve each mechanism lives on:
+    </p>
+    <ul>
+      <li>
+        <strong>Interpenetration during blends.</strong> A half-weight
+        <code>PhysicsBlendWeight</code> pose is the average of two valid poses — which is not
+        itself guaranteed to be valid. Blend a ragdoll lying against a wall back to animation
+        and the intermediate poses can pass straight through geometry, because no solver ever
+        saw them.
+      </li>
+      <li>
+        <strong>Fighting drives.</strong> When a PAC-driven character lands on another physics
+        body, the contact solver and PAC's drives are competing controllers acting on the same
+        bodies in the same solve. Badly tuned gains show up as jitter precisely because both
+        are real forces — something a post-solve lerp can never cause, and never fix.
+      </li>
+      <li>
+        <strong>Hit reactions.</strong> If you want a character that visibly absorbs impacts
+        while staying in control, that's PAC territory: the impact must exist in the
+        simulation. If you want a clean, art-directed transition between "animated" and
+        "simulated" states, that's blend-weight territory. Most production setups need both,
+        layered deliberately — which is exactly why treating them as one feature produces
+        systems nobody can tune.
+      </li>
+    </ul>
+
+    <h2>The mental model</h2>
+    <blockquote>
+      PAC is a controller <em>inside</em> the simulation. PhysicsBlendWeight is a compositor
+      <em>after</em> it. One changes what happens; the other changes what you see.
+    </blockquote>
+    <p>
+      Once the two are cleanly separated, ragdoll architecture gets simpler: drive the bodies
+      with PAC (or per-joint constraint drives) while physical behavior matters, and reserve
+      the blend weight for entering and leaving simulation — short, masked, and validated
+      against the failure cases above. That separation is the foundation the
+      <a href="../tools.html#ragdoll">AnimForge Ragdoll Stability Stack</a> is built on.
+    </p>
+
+    <p class="muted">
+      Questions or corrections? <a href="mailto:contact@animforgesystems.com">Get in touch</a> —
+      engine internals evolve, and this page will be kept honest.
+    </p>
+  </article>
+</main>
+
+<footer class="site-footer wrap">
+  <span>© 2026 AnimForge Systems · Espoo, Finland</span>
+  <span><a href="../tools.html">Tools</a> · <a href="../lab.html">Lab</a> · <a href="index.html">Writing</a> · <a href="../about.html">About</a></span>
+</footer>
+
+<script src="../assets/js/site.js"></script>
+</body>
+</html>
