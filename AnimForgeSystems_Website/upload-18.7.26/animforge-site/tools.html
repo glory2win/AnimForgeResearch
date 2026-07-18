@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tools — AnimForge Systems</title>
+  <meta name="description" content="AnimForge tools for Unreal Engine and Maya: DLS IK solver node, N-dimensional RBF blend spaces, ragdoll stability components, and WarpViz motion warping visualization.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="assets/brand/animforge-mark.svg">
+  <link rel="apple-touch-icon" href="assets/brand/animforge-mark-256.png">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <nav class="nav wrap" aria-label="Main">
+    <a class="brand" href="index.html"><img class="mark" src="assets/brand/animforge-mark.svg" alt="" width="30" height="30">Anim<em>Forge</em> Systems</a>
+    <button class="nav-toggle" aria-expanded="false" aria-controls="nav-links">MENU</button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="tools.html" aria-current="page">Tools</a></li>
+      <li><a href="lab.html">Lab</a></li>
+      <li><a href="blog/index.html">Writing</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a class="nav-cta" href="about.html#contact">Hire me</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main>
+
+  <section class="page-hero">
+    <div class="wrap">
+      <p class="eyebrow">Tools</p>
+      <h1>The AnimForge toolkit</h1>
+      <p>Runtime animation components for Unreal Engine and pipeline tooling for Maya.
+      Each entry below links its demo video.</p>
+    </div>
+  </section>
+
+  <!-- ============ DLS IK ============ -->
+  <section class="section" id="dls-ik">
+    <div class="wrap">
+      <p class="eyebrow">01 · In Development</p>
+      <h2>DLS IK Solver Node</h2>
+      <div class="feature-row">
+        <div>
+          <p class="muted">
+            A damped least-squares inverse kinematics AnimNode. Where CCD twists and FABRIK
+            drifts near singular configurations, DLS regularizes the solve — the damping term
+            trades a small amount of tracking accuracy for unconditional stability at full
+            extension and near joint limits.
+          </p>
+          <p class="muted">
+            The error term is computed in axis-angle space via the rotation log-map, the same
+            formulation the engine's Physical Animation Component uses internally for its
+            orientation drives — which makes solver behavior predictable when the two interact.
+          </p>
+          <!-- Replace the placeholder below with your YouTube embed:
+               <iframe src="https://www.youtube.com/embed/VIDEO_ID" title="DLS IK demo"
+                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                       allowfullscreen></iframe> -->
+          <div class="video-frame">
+            <span class="video-placeholder">[ demo video — YouTube embed goes here ]</span>
+          </div>
+        </div>
+        <ul class="spec-list">
+          <li><strong>Solver</strong> — damped least-squares with per-chain λ control</li>
+          <li><strong>Error term</strong> — axis-angle (log-map) Jacobian error computation</li>
+          <li><strong>Stability</strong> — well-behaved near singularities and full extension</li>
+          <li><strong>Integration</strong> — standard AnimGraph node, LOD-aware evaluation</li>
+          <li><strong>Platform</strong> — Unreal Engine 5, C++</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  
+  <!-- ============ CTA ============ -->
+  <section class="section">
+    <div class="wrap">
+      <div class="contact-panel">
+        <div>
+          <h2>Want release updates?</h2>
+          <p class="muted">Tools land on the marketplace as they ship. Follow along, or get in
+          touch if you want early access for your team.</p>
+        </div>
+        <div>
+          <a class="contact-line" href="mailto:contact@animforgesystems.com">contact@animforgesystems.com</a>
+          <a class="contact-line" href="https://www.linkedin.com/in/varma-dandu-29b3b931/" rel="me">Follow on LinkedIn</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer wrap">
+  <span>© 2026 AnimForge Systems · Finland</span>
+  <span><a href="tools.html">Tools</a> · <a href="lab.html">Lab</a> · <a href="blog/index.html">Writing</a> · <a href="about.html">About</a></span>
+</footer>
+
+<script src="assets/js/site.js"></script>
+</body>
+</html>

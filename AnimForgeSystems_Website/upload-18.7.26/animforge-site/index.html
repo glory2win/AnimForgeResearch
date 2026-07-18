@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AnimForge Systems — Real-Time Animation Systems R&D</title>
+  <meta name="description" content="Professional animation tooling for Unreal Engine and Maya: runtime IK solvers, ragdoll stability systems, RBF blend spaces, and motion warping visualization. Contract animation systems engineering.">
+  <meta property="og:title" content="AnimForge Systems — Real-Time Animation Systems R&D">
+  <meta property="og:description" content="Runtime animation tools, forged for production. IK solvers, ragdoll stability, N-dimensional blend spaces, Maya-Unreal pipeline tooling.">
+  <meta property="og:image" content="assets/brand/animforge-banner-1584x396.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="assets/brand/animforge-mark.svg">
+  <link rel="apple-touch-icon" href="assets/brand/animforge-mark-256.png">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <nav class="nav wrap" aria-label="Main">
+    <a class="brand" href="index.html"><img class="mark" src="assets/brand/animforge-mark.svg" alt="" width="30" height="30">Anim<em>Forge</em> Systems</a>
+    <button class="nav-toggle" aria-expanded="false" aria-controls="nav-links">MENU</button>
+    <ul class="nav-links" id="nav-links">
+      <li><a href="tools.html">Tools</a></li>
+      <li><a href="lab.html">Lab</a></li>
+      <li><a href="blog/index.html">Writing</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a class="nav-cta" href="about.html#contact">Hire me</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ============ HERO — live DLS IK solver (C)2026 IK solvers, text and tech stack discussions here are copy righted to AnimForge Systems. Unauthorized copying is strictly prohibited. =========== -->
+  <section class="hero" aria-label="Introduction">
+    <canvas id="ik-canvas" aria-hidden="true"></canvas>
+    <div class="wrap">
+      <div class="hero-inner">
+        <p class="eyebrow">Animation systems R&amp;D</p>
+        <h1>Runtime animation tools, <span class="accent">forged</span> for production.</h1>
+        <p class="hero-sub">
+          IK solvers, ragdoll stability, N&#8209;dimensional blend spaces, and Maya&#8596;Unreal
+          pipeline tooling — built in C++ against real engine internals, shipped as
+          drop&#8209;in components.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="tools.html">Explore the tools</a>
+          <a class="btn btn-ghost" href="about.html#contact">Contract work</a>
+        </div>
+      </div>
+    </div>
+    <p class="hero-caption">live: damped least-squares IK &middot; 6 bones &middot; &lambda; = 0.35 &middot; move your cursor</p>
+  </section>
+
+  <!-- ============  PHILOSOPHY AND POSITIONING ==============-->
+  <section class="section" id="tools">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Philosophy</p>
+        <h2>The systems beneath the motion</h2>
+        <p class="muted">AnimForge Systems is an independent animation systems R&D studio focused on real-time animation, engine technology, and DCC tooling.</p>
+
+        <p class="muted">We build production-oriented tools for Unreal, Maya, and other real-time environments while maintaining our own research platforms for exploring algorithms
+           and animation architectures across different runtime and authoring environments.</p>
+
+        <p class="muted">The goal is not to replace existing engines. It is to understand animation systems deeply enough to extend them, integrate with them, and build better tools around them.</p>
+      </div>
+  </section>
+
+  <!-- ============ TOOLS OVERVIEW ============ -->
+  <section class="section" id="tools">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Tools</p>
+        <h2>Extending the animation stack</h2>
+        <p class="muted">Every tool targets a specific problem in real-time animation — extending existing engine capabilities where needed,
+           exploring new approaches where useful, and shipping with the engineering notes behind the implementation.</p>
+      </div>
+
+      <div class="card-grid">
+        <article class="card">
+          <span class="status status-dev">In development</span>
+          <h3>DLS IK Solver Node</h3>
+          <p>A damped least-squares IK AnimNode using axis-angle Jacobian error computation.
+             Designed for improved stability near singularities and configurable per-chain damping.</p>
+          <a class="card-link" href="tools.html#dls-ik">Technical notes →</a>
+        </article>
+
+        <article class="card">
+          <span class="status status-rd">R&amp;D</span>
+          <h3>High-Dimensional Motion Blending</h3>
+          <p>Research into more flexible approaches to representing and interpolating complex motion spaces.</p>
+
+        </article>
+
+        <article class="card">
+          <span class="status status-rd">R&amp;D</span>
+          <h3>Physics-Driven Animation</h3>
+          <p>Research into stable, controllable approaches to combining physical simulation with authored motion.</p>
+        </article>
+
+        <article class="card">
+          <span class="status status-rd">R&amp;D</span>
+          <h3>Authoring ↔ Runtime Feedback</h3>
+          <p>Exploring workflows that connect DCC authoring with real-time runtime evaluation.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LAB TEASER ============ -->
+  <section class="section" id="lab">
+    <div class="wrap">
+      <div class="feature-row">
+        <div>
+          <p class="eyebrow">The lab</p>
+          <h2>Building to answer questions</h2>
+          <p class="muted">
+            Announced soon..
+          </p>
+          <a class="btn btn-ghost" href="lab.html">Inside the lab</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WRITING TEASER ============ -->
+  <section class="section" id="writing">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Writing</p>
+        <h2>Engineering notes, not marketing copy</h2>
+        <p class="muted">Deep dives into engine internals, solver math, and the architecture
+        decisions behind each tool.</p>
+      </div>
+      <ul class="post-list">
+        <li>
+          <a href="blog/pac-vs-physicsblendweight.html">PAC vs. PhysicsBlendWeight: two knobs that are not the same knob</a>
+          <p class="post-meta">UNREAL ENGINE · PHYSICS ANIMATION</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ CONTACT ============ -->
+  <section class="section" id="contact-teaser">
+    <div class="wrap">
+      <div class="contact-panel">
+        <div>
+          <p class="eyebrow">Contracts</p>
+          <h2>Need an animation systems engineer?</h2>
+          <p class="muted">Available for contract work on runtime animation systems,
+          physics animation, and DCC pipeline tooling — UE5 C++, Maya API, C#, Python.</p>
+        </div>
+        <div>
+          <a class="contact-line" href="mailto:contact@animforgesystems.com">contact@animforgesystems.com</a>
+          <a class="contact-line" href="https://www.linkedin.com/in/varma-dandu-29b3b931/" rel="me">LinkedIn — Varma Dandu</a>
+          <a class="contact-line" href="https://github.com/glory2win" rel="me">GitHub — glory2win</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer wrap">
+  <span>© 2026 AnimForge Systems · Finland</span>
+  <span><a href="tools.html">Tools</a> · <a href="lab.html">Lab</a> · <a href="blog/index.html">Writing</a> · <a href="about.html">About</a></span>
+</footer>
+
+<script src="assets/js/site.js"></script>
+<script src="assets/js/ik-hero.js"></script>
+</body>
+</html>
