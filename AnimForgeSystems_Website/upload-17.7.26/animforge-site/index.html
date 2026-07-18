@@ -35,7 +35,7 @@
 
 <main>
 
-  <!-- ============ HERO — live DLS IK solver (C)2026 IK solvers, text and tech stack discussions here are copy righted to AnimForge Systems. Unauthorized copying is strictly prohibited. =========== -->
+  <!-- ============ HERO — live DLS IK solver ============ -->
   <section class="hero" aria-label="Introduction">
     <canvas id="ik-canvas" aria-hidden="true"></canvas>
     <div class="wrap">
@@ -56,44 +56,30 @@
     <p class="hero-caption">live: damped least-squares IK &middot; 6 bones &middot; &lambda; = 0.35 &middot; move your cursor</p>
   </section>
 
-  <!-- ============  PHILOSOPHY AND POSITIONING ==============-->
-  <section class="section" id="tools">
-    <div class="wrap">
-      <div class="section-head">
-        <p class="eyebrow">Philosophy</p>
-        <h2>The systems beneath the motion</h2>
-        <p class="muted">AnimForge Systems is an independent animation systems R&D studio focused on real-time animation, engine technology, and DCC tooling.</p>
-
-        <p class="muted">We build production-oriented tools for Unreal, Maya, and other real-time environments while maintaining our own research platforms for exploring algorithms
-           and animation architectures across different runtime and authoring environments.</p>
-
-        <p class="muted">The goal is not to replace existing engines. It is to understand animation systems deeply enough to extend them, integrate with them, and build better tools around them.</p>
-      </div>
-  </section>
-
   <!-- ============ TOOLS OVERVIEW ============ -->
   <section class="section" id="tools">
     <div class="wrap">
       <div class="section-head">
         <p class="eyebrow">Tools</p>
-        <h2>Extending the animation stack</h2>
-        <p class="muted">Every tool targets a specific problem in real-time animation — extending existing engine capabilities where needed,
-           exploring new approaches where useful, and shipping with the engineering notes behind the implementation.</p>
+        <h2>Built where Unreal stops</h2>
+        <p class="muted">Each tool targets a specific gap in the stock animation toolset —
+        and each one ships with the engineering notes explaining how it works.</p>
       </div>
 
       <div class="card-grid">
         <article class="card">
           <span class="status status-shipping">Shipping</span>
           <h3>DLS IK Solver Node</h3>
-          <p>A damped least-squares IK AnimNode using axis-angle Jacobian error computation.
-             Designed for improved stability near singularities and configurable per-chain damping.</p>
+          <p>A damped least-squares IK AnimNode with axis-angle Jacobian error computation.
+          Stable near singularities where CCD and FABRIK degrade, with per-chain damping control.</p>
           <a class="card-link" href="tools.html#dls-ik">Technical notes →</a>
         </article>
 
         <article class="card">
           <span class="status status-dev">In development</span>
           <h3>RBF Blend Space</h3>
-          <p>N-dimensional blend spaces via radial basis function interpolation — a more general alternative to traditional 2D blend-space workflows. Engine-portable core solver.</p>
+          <p>N-dimensional blend spaces via radial basis function interpolation — past the
+          2D ceiling of Unreal's Delaunay-based blend space assets. Engine-portable core solver.</p>
           <a class="card-link" href="tools.html#rbf">Technical notes →</a>
         </article>
 
@@ -124,9 +110,9 @@
           <p class="eyebrow">The lab</p>
           <h2>Prani — an animation engine built to answer questions</h2>
           <p class="muted">
-            Prani is a lightweight, multithreaded, ECS-based animation engine built from scratch — a laboratory for asking difficult questions about animation systems.
-             How should poses be represented? How should solvers scale? Where should work happen? Ideas are explored, measured, 
-             and validated here. Validated ideas can then be adapted into engine plugins, production tools, or further research.
+            Prani is a lightweight, multithreaded, ECS-based animation engine built from scratch —
+            a research sandbox for iterating on IK, blending, and pose pipelines at compile times
+            Unreal can't match. Algorithms are validated here first, then shipped as engine plugins.
           </p>
           <a class="btn btn-ghost" href="lab.html">Inside the lab</a>
         </div>
@@ -180,7 +166,7 @@
 </main>
 
 <footer class="site-footer wrap">
-  <span>© 2026 AnimForge Systems · Finland</span>
+  <span>© 2026 AnimForge Systems · Espoo, Finland</span>
   <span><a href="tools.html">Tools</a> · <a href="lab.html">Lab</a> · <a href="blog/index.html">Writing</a> · <a href="about.html">About</a></span>
 </footer>
 
