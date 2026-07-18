@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lab · Prani — AnimForge Systems</title>
-  <meta name="description" content="Prani is AnimForge's animation programming laboratory: a lightweight, multithreaded, ECS-based animation engine built from scratch for rapid R&D on modern animation techniques.">
+  <title>Lab · AnimForge Systems</title>
+  <meta name="description" content="AnimForge's animation programming laboratory: a lightweight, multithreaded, ECS-based animation engine built from scratch for rapid R&D on modern animation techniques.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -33,92 +33,11 @@
   <section class="page-hero">
     <div class="wrap">
       <p class="eyebrow">The lab</p>
-      <h1>Prani</h1>
-      <p>A lightweight, multithreaded, ECS-based animation engine built from scratch —
-      AnimForge's research sandbox for modern animation techniques.</p>
+      <h1>Building to answer questions</h1>
+      <p>Coming soon...</p>
     </div>
   </section>
 
-  <section class="section">
-    <div class="wrap">
-      <div class="feature-row">
-        <div>
-          <h2>Why build an engine to build tools?</h2>
-          <p class="muted">
-            Iterating on animation algorithms inside a full game engine means paying the full
-            engine's cost every cycle: long rebuilds, heavyweight editors, and abstractions you
-            have to work around instead of with. Prani exists to make the iteration loop on
-            solver math, blending strategies, and pose pipelines as short as possible.
-          </p>
-          <p class="muted">
-            Algorithms are proven here first — with visualizers and unit tests — then ported
-            into engine plugins. The DLS IK solver and the RBF blend space core both follow
-            this path: validate in Prani, ship in Unreal.
-          </p>
-        </div>
-        <ul class="spec-list">
-          <li><strong>Language</strong> — modern C++, built from scratch</li>
-          <li><strong>ECS</strong> — EnTT registry, command-buffer structural changes</li>
-          <li><strong>Threading</strong> — Intel TBB task parallelism across pose evaluation</li>
-          <li><strong>Rendering</strong> — Raylib 6 with native skeletal animation blending</li>
-          <li><strong>Assets</strong> — glTF import via cgltf</li>
-          <li><strong>Tooling UI</strong> — Dear ImGui, composited into desktop tooling</li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="wrap">
-      <div class="section-head">
-        <p class="eyebrow">Current research threads</p>
-        <h2>What's on the bench</h2>
-      </div>
-      <div class="card-grid">
-        <article class="card">
-          <span class="status status-dev">Active</span>
-          <h3>Parallel pose pipeline</h3>
-          <p>ECS pose-view architecture with TBB <code>parallel_for</code> across skeleton
-          evaluation — measuring where task granularity pays off and where it doesn't.</p>
-        </article>
-        <article class="card">
-          <span class="status status-dev">Active</span>
-          <h3>IK iteration environment</h3>
-          <p>The DLS solver math running in a bare Prani node — sub-second rebuild cycles for
-          solver experiments that would take minutes per iteration in a full engine.</p>
-        </article>
-        <article class="card">
-          <span class="status status-rd">Exploring</span>
-          <h3>Tooling composition</h3>
-          <p>Raylib rendering composited into a desktop tooling UI — an FBO render-to-texture
-          bridge, with shared GL context as the long-term target.</p>
-        </article>
-        <article class="card">
-          <span class="status status-rd">Exploring</span>
-          <h3>WarpViz evaluation target</h3>
-          <p>Prani as a lightweight replacement for a full Unreal instance in the WarpViz
-          pipeline — making the tool dramatically easier to distribute.</p>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="wrap">
-      <div class="section-head">
-        <p class="eyebrow">Devlog</p>
-        <h2>Build notes</h2>
-        <p class="muted">Architecture decisions, dead ends, and measurements from Prani's
-        development — posted as they happen.</p>
-      </div>
-      <ul class="post-list">
-        <li>
-          <a href="blog/index.html">Devlog #1 coming soon — why Prani exists</a>
-          <p class="post-meta">PRANI · DEVLOG</p>
-        </li>
-      </ul>
-    </div>
-  </section>
 
 </main>
 

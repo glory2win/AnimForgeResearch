@@ -61,3 +61,10 @@ viewport dark `#14181D`, ember orange `#F2762E` (primary accent), spline cyan
 cursor inside the hero, otherwise a Lissajous idle path. `prefers-reduced-motion`
 renders a single static solved pose instead. Tune `NUM_BONES`, `LAMBDA`,
 `ITERATIONS` at the top of the file.
+
+
+## VERSIONS
+
+- v1.0 is generated context - 16.7.2026
+- v2.0 is edited and build all sections, then uploaded first time to website this is reference version for future editions too - 17.7.2026
+- v3.0 is current version with limitation, not disclousing tools only working on DLS, prani and other tools announces later and updates accoringly with above v2.0 reference - 18.7.2026 Refer: Matter.md file for text.

@@ -35,14 +35,14 @@
       <p class="eyebrow">Tools</p>
       <h1>The AnimForge toolkit</h1>
       <p>Runtime animation components for Unreal Engine and pipeline tooling for Maya.
-      Each entry below links its demo video and the engineering notes behind it.</p>
+      Each entry below links its demo video.</p>
     </div>
   </section>
 
   <!-- ============ DLS IK ============ -->
   <section class="section" id="dls-ik">
     <div class="wrap">
-      <p class="eyebrow">01 · Shipping</p>
+      <p class="eyebrow">01 · In Development</p>
       <h2>DLS IK Solver Node</h2>
       <div class="feature-row">
         <div>
@@ -76,108 +76,7 @@
     </div>
   </section>
 
-  <!-- ============ RBF BLEND SPACE ============ -->
-  <section class="section" id="rbf">
-    <div class="wrap">
-      <p class="eyebrow">02 · In development</p>
-      <h2>RBF Blend Space</h2>
-      <div class="feature-row">
-        <div>
-          <p class="muted">
-            Unreal's blend space assets stop at two dimensions — the Delaunay triangulation
-            and barycentric weighting they're built on doesn't generalize past 2D. Real gameplay
-            parameters don't stop at two: aim yaw, aim pitch, lean, speed, stance.
-          </p>
-          <p class="muted">
-            The AnimForge RBF Blend Space node interpolates sample poses in N dimensions using
-            radial basis functions with cardinal interpolation, clamp-and-renormalize negative
-            weight handling, and top-k pruning to bound runtime cost. The core solver is a
-            standalone, engine-independent library — built for portability to Unity and custom
-            engines from day one.
-          </p>
-          <div class="video-frame">
-            <span class="video-placeholder">[ 2D weight-field visualizer clip goes here ]</span>
-          </div>
-        </div>
-        <ul class="spec-list">
-          <li><strong>Dimensions</strong> — N-dimensional input, past the stock 2D ceiling</li>
-          <li><strong>Kernels</strong> — Gaussian and polyharmonic, per-asset selectable</li>
-          <li><strong>Weights</strong> — cardinal interpolation with clamp-and-renormalize</li>
-          <li><strong>Runtime cost</strong> — top-k sample pruning with bounded evaluation</li>
-          <li><strong>Portability</strong> — standalone C++ solver, engine adapters on top</li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ RAGDOLL STACK ============ -->
-  <section class="section" id="ragdoll">
-    <div class="wrap">
-      <p class="eyebrow">03 · In development</p>
-      <h2>Ragdoll Stability Stack</h2>
-      <div class="feature-row">
-        <div>
-          <p class="muted">
-            Getting into ragdoll is easy. Getting out — cleanly, on time, without jitter —
-            is where projects burn weeks. The stability stack is a set of layered, drop-in
-            <code>ActorComponent</code>s that own the full ragdoll lifecycle.
-          </p>
-          <p class="muted">
-            <code>RagdollStabilityComponent</code> drives a
-            <code>BlendingIn → Active → Settling → BlendingOut → Done</code> state machine with
-            impulse-accumulator contact detection and rolling-velocity settle detection — because
-            native physics sleep is not a reliable settle trigger. A companion joint-drive layer
-            adds per-joint orientation targets with independent swing/twist gains.
-          </p>
-          <div class="video-frame">
-            <span class="video-placeholder">[ ragdoll settle & recover demo goes here ]</span>
-          </div>
-        </div>
-        <ul class="spec-list">
-          <li><strong>Lifecycle</strong> — explicit state machine, Blueprint-assignable events</li>
-          <li><strong>Settle detection</strong> — ring-buffer velocity window + hard timeout</li>
-          <li><strong>Contacts</strong> — impulse-accumulator based, filters resting chatter</li>
-          <li><strong>Joint drives</strong> — per-joint targets, separate swing/twist gains</li>
-          <li><strong>Integration</strong> — pose snapshot & blend logic built in, Chaos physics</li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ WARPVIZ ============ -->
-  <section class="section" id="warpviz">
-    <div class="wrap">
-      <p class="eyebrow">04 · R&amp;D</p>
-      <h2>AnimForge WarpViz</h2>
-      <div class="feature-row">
-        <div>
-          <p class="muted">
-            Motion Warping decisions get made in Unreal, but animation gets authored in Maya —
-            and animators can't see what warping will do to their work until it's in engine.
-            WarpViz closes that loop.
-          </p>
-          <p class="muted">
-            On request, a pre-configured Unreal evaluation level natively evaluates the warp
-            targets and returns the warped root trajectory and pose trail back into Maya as a
-            transparent animation layer overlay — the animator sees engine-accurate warping
-            directly in their authoring viewport. Snapshot request-response, not fragile
-            per-frame streaming.
-          </p>
-          <div class="video-frame">
-            <span class="video-placeholder">[ Maya ↔ Unreal warp overlay demo goes here ]</span>
-          </div>
-        </div>
-        <ul class="spec-list">
-          <li><strong>Direction</strong> — bidirectional Maya ↔ Unreal bridge</li>
-          <li><strong>Evaluation</strong> — native in-engine warp evaluation, exact parity</li>
-          <li><strong>Overlay</strong> — warped trajectory + pose trail as a Maya anim layer</li>
-          <li><strong>Architecture</strong> — on-demand snapshot evaluation, no streaming loop</li>
-          <li><strong>V1 scope</strong> — root motion trajectory visualization</li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
+  
   <!-- ============ CTA ============ -->
   <section class="section">
     <div class="wrap">
